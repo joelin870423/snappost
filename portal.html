@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SnapPost 會員中心</title>
+<style>
+  :root { --bg:#f5f6f8; --card:#fff; --line:#e3e6ea; --txt:#1c2733; --sub:#6b7a8c;
+          --pri:#2f6f4f; --pri-h:#275d42; --warn:#b4452c; --chip:#eef2f0; }
+  * { box-sizing:border-box; margin:0; }
+  body { font-family:"Microsoft JhengHei",system-ui,sans-serif; background:var(--bg); color:var(--txt); }
+  .wrap { max-width:960px; margin:0 auto; padding:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px; }
+  input { padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:14px; width:100%; }
+  button { padding:9px 16px; border:0; border-radius:8px; background:var(--pri); color:#fff; font-size:14px; cursor:pointer; }
+  button:hover { background:var(--pri-h); } button.sec { background:#e8ebee; color:var(--txt); }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th,td { padding:7px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  th { color:var(--sub); font-weight:600; white-space:nowrap; }
+  .chip { background:var(--chip); border-radius:6px; padding:2px 8px; font-size:12px; display:inline-block; }
+  .chip.bad { background:#f7e5e0; color:var(--warn); }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
+  .stat .k { color:var(--sub); font-size:12.5px; } .stat .v { font-size:22px; font-weight:700; margin-top:4px; }
+  .muted { color:var(--sub); font-size:12.5px; }
+  #login { max-width:360px; margin:12vh auto; }
+  #login input { margin-bottom:10px; }
+  .top { display:flex; justify-content:space-between; align-items:center; margin:14px 0; }
+  h1 { font-size:20px; } h2 { font-size:15px; margin-bottom:10px; }
+  a.plain { color:var(--pri); text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="login" class="card" style="display:none">
+    <h1 style="margin-bottom:6px">會員中心</h1>
+    <p class="muted" style="margin-bottom:14px">使用 SnapPost 軟體內註冊的帳號密碼登入</p>
+    <input id="liUser" placeholder="帳號" autocomplete="username">
+    <input id="liPw" type="password" placeholder="密碼" autocomplete="current-password">
+    <button style="width:100%" onclick="doLogin()">登入</button>
+    <p id="liMsg" class="muted" style="margin-top:10px"></p>
+    <p class="muted" style="margin-top:14px"><a class="plain" href="index.html">← 回下載頁</a></p>
+  </div>
+
+  <div id="app" style="display:none">
+    <div class="top">
+      <h1>會員中心 — <span id="uname"></span></h1>
+      <div><button class="sec" onclick="refresh()">重新整理</button>
+      <button class="sec" onclick="location.reload()">登出</button></div>
+    </div>
+    <div class="grid" style="margin-bottom:14px">
+      <div class="stat"><div class="k">方案狀態</div><div class="v" id="sStatus">—</div></div>
+      <div class="stat"><div class="k">有效期限</div><div class="v" id="sExpire">—</div></div>
+      <div class="stat"><div class="k">剩餘可發訊息</div><div class="v" id="sRemain">—</div></div>
+      <div class="stat"><div class="k">已發送 / 上限</div><div class="v" id="sUsage">—</div></div>
+    </div>
+    <div class="card">
+      <h2>發送紀錄</h2>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>時間</th><th>粉專</th><th>嘗試</th><th>成功</th><th>失敗</th><th>狀態</th><th>錯誤摘要</th></tr></thead>
+        <tbody id="rRows"><tr><td colspan="7" class="muted">載入中...</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://xsagokraqdmcmbjvctwy.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWdva3JhcWRtY21ianZjdHd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzg4OTksImV4cCI6MjEwNjYxNDg5OX0.MEaRqWq7EREH0LPklw-3ERRwvcA2PMuhjpyH5lQUVMw";
+let CRED = null; // 僅存在記憶體，重新整理即登出
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function rpc(fn, args) {
+  const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+               'Content-Type': 'application/json' },
+    body: JSON.stringify(args || {})
+  });
+  if (!r.ok) {
+    let m = ''; try { m = (await r.json()).message || ''; } catch (e) {}
+    if (m.includes('bad_credentials')) throw new Error('帳號或密碼錯誤');
+    if (m.includes('password_reset_required')) throw new Error('此帳號需重設密碼，請聯絡客服');
+    throw new Error(m || '連線失敗');
+  }
+  return r.json();
+}
+
+async function doLogin() {
+  $('liMsg').textContent = '登入中...';
+  const cred = { p_username: $('liUser').value.trim(), p_password: $('liPw').value };
+  try {
+    const me = await rpc('sp_portal_me', cred);
+    CRED = cred;
+    show(me);
+    loadRecords();
+  } catch (e) { $('liMsg').textContent = e.message; }
+}
+
+function show(me) {
+  $('login').style.display = 'none'; $('app').style.display = 'block';
+  $('uname').textContent = me.username;
+  const expired = me.expire_date && me.expire_date < new Date().toISOString().slice(0, 10);
+  $('sStatus').innerHTML = me.status !== 'active' ? '<span class="chip bad">停權</span>'
+      : (expired ? '<span class="chip bad">已到期</span>' : '<span class="chip">使用中</span>');
+  $('sExpire').textContent = me.expire_date || '—';
+  $('sRemain').textContent = me.remaining.toLocaleString();
+  $('sUsage').textContent = me.messages_sent.toLocaleString() + ' / ' + me.message_limit.toLocaleString();
+}
+
+async function refresh() {
+  if (!CRED) return;
+  try { show(await rpc('sp_portal_me', CRED)); loadRecords(); } catch (e) {}
+}
+
+async function loadRecords() {
+  try {
+    const rows = await rpc('sp_portal_records', { ...CRED, p_limit: 200 });
+    $('rRows').innerHTML = rows.map(r =>
+      '<tr><td style="white-space:nowrap">' + esc(r.start_time || '') + '</td>' +
+      '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+        esc((r.fanpage_url || '').replace('https://www.facebook.com/', '')) + '</td>' +
+      '<td>' + r.total_attempted + '</td><td>' + r.success_count + '</td><td>' + r.fail_count + '</td>' +
+      '<td>' + (r.status === 'completed' ? '<span class="chip">完成</span>' : '<span class="chip bad">' + esc(r.status) + '</span>') + '</td>' +
+      '<td class="muted" style="max-width:260px">' + esc((r.error_summary || '').slice(0, 120)) + '</td></tr>'
+    ).join('') || '<tr><td colspan="7" class="muted">還沒有發送紀錄</td></tr>';
+  } catch (e) {
+    $('rRows').innerHTML = '<tr><td colspan="7" class="muted">' + esc(e.message) + '</td></tr>';
+  }
+}
+
+$('login').style.display = 'block';
+$('liPw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+</body>
+</html>
