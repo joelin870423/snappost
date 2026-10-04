@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SnapPost 公告快手 — Facebook 粉專公告自動發送</title>
-<meta name="description" content="你有在投 Meta「開啟訊息」廣告嗎？SnapPost 公告快手把廣告帶進粉專的對話，變成可以定期觸達的名單。自動進入粉專收件匣，把文字與圖片公告送給每一位聯絡人。">
+<title>SnapPost Broadcast 公告快手 — Facebook 粉專公告自動發送</title>
+<meta name="description" content="你有在投 Meta「開啟訊息」廣告嗎？SnapPost Broadcast 公告快手把廣告帶進粉專的對話，變成可以定期觸達的名單。自動進入粉專收件匣，把文字與圖片公告送給每一位聯絡人。">
 <link rel="icon" href="favicon.ico">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -30,8 +30,8 @@
   /* nav */
   nav { position:sticky; top:0; z-index:40; background:rgba(255,255,255,.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
   nav .wrap { display:flex; align-items:center; gap:28px; height:66px; }
-  .brand { display:flex; align-items:center; gap:10px; font-weight:900; font-size:18px; color:var(--blue); white-space:nowrap; }
-  .brand span { color:var(--ink); font-weight:700; }
+  .brand { display:flex; align-items:center; gap:8px; font-weight:900; font-size:17px; color:var(--blue); white-space:nowrap; }
+  .brand span { color:var(--ink); font-weight:700; font-size:15px; }
   .navlinks { display:flex; gap:4px; margin-left:auto; }
   .navlinks a, .navlinks button { background:none; border:0; font:inherit; font-size:15px; font-weight:500; color:var(--ink-2); padding:8px 14px; border-radius:8px; cursor:pointer; }
   .navlinks a:hover, .navlinks button:hover { background:var(--blue-xl); color:var(--blue); }
@@ -127,7 +127,7 @@
   <div class="wrap">
     <a class="brand" href="#intro" onclick="showTab('intro')">
       <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" fill="#1b6fe8"/><path d="M8 10.5a2.5 2.5 0 0 1 5 0V16a2 2 0 0 0 4 0v-5.5a2.5 2.5 0 0 1 5 0V16a7 7 0 0 1-14 0z" fill="#fff"/></svg>
-      SnapPost <span>公告快手</span>
+      SnapPost Broadcast <span>公告快手</span>
     </a>
     <button class="burger" onclick="document.querySelector('.navlinks').classList.toggle('open')" aria-label="選單">☰</button>
     <div class="navlinks">
@@ -149,7 +149,7 @@
       <div class="eyebrow">FACEBOOK 粉專公告自動化</div>
       <h1>你有在投 Meta<em>「開啟訊息」</em>廣告嗎？</h1>
       <div class="h1b">粉專裡面的人，想要定期發公告嗎？</div>
-      <p class="lead">廣告把客人帶進對話框，卻只能聊一次就斷線？SnapPost 公告快手自動進入粉專收件匣，把文字與圖片公告一則一則送給每一位聯絡人，讓廣告預算換來的名單，變成可以定期觸達的資產。</p>
+      <p class="lead">廣告把客人帶進對話框，卻只能聊一次就斷線？SnapPost Broadcast 公告快手自動進入粉專收件匣，把文字與圖片公告一則一則送給每一位聯絡人，讓廣告預算換來的名單，變成可以定期觸達的資產。</p>
       <div class="cta">
         <button class="btn btn-pri" onclick="showTab('download')">免費下載試用</button>
         <a class="btn btn-sec" href="#features">看看它怎麼做</a>
@@ -310,7 +310,7 @@
 <div id="tab-download" class="tab">
   <div class="dl-hero">
     <div class="wrap">
-      <h1>下載 SnapPost 公告快手</h1>
+      <h1>下載 SnapPost Broadcast 公告快手</h1>
       <p>Windows 10 / 11 · 安裝後開啟即可註冊試用 · 更新不影響你的資料</p>
     </div>
   </div>
@@ -359,7 +359,7 @@
 
 <footer>
   <div class="wrap">
-    <div>© SnapPost 公告快手</div>
+    <div>© SnapPost Broadcast 公告快手</div>
     <div><a href="portal.html">會員中心</a><a href="admin.html">管理後台</a></div>
   </div>
 </footer>
