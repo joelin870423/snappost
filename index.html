@@ -70,6 +70,11 @@
   .pain .card { border-top:4px solid var(--blue); }
   .pain .card .q { font-size:13px; color:var(--ink-3); margin-bottom:6px; }
 
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+  .who .card { text-align:left; }
+  .who .card .ico { background:linear-gradient(135deg,#e8f1fd,#dbe9fb); }
+  .who .card .tag { display:inline-block; font-size:12px; color:var(--blue); background:var(--blue-l); border-radius:6px; padding:2px 8px; margin-top:12px; }
+  .who-note { text-align:center; color:var(--ink-2); margin-top:26px; font-size:15px; }
   .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; counter-reset:s; }
   .step { position:relative; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:28px 24px 24px; }
   .step .n { position:absolute; top:-16px; left:22px; width:34px; height:34px; border-radius:50%; background:var(--blue); color:#fff; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(27,111,232,.3); }
@@ -108,7 +113,7 @@
   @media (max-width:900px) {
     .hero .wrap { grid-template-columns:1fr; } .hero { padding:44px 0 36px; }
     .hero h1, .hero .h1b { font-size:30px; }
-    .grid3, .steps { grid-template-columns:1fr; } .dl-cols { grid-template-columns:1fr; }
+    .grid3, .steps { grid-template-columns:1fr; } .grid4 { grid-template-columns:1fr 1fr; } .dl-cols { grid-template-columns:1fr; }
     .navlinks { display:none; position:absolute; top:66px; left:0; right:0; background:#fff; border-bottom:1px solid var(--line); flex-direction:column; padding:10px 16px 16px; }
     .navlinks.open { display:flex; } .burger { display:block; } .nav-cta { margin-left:0; }
     .band { padding:32px 24px; } section { padding:52px 0; }
@@ -212,6 +217,43 @@
       <div class="card"><div class="q">狀況二</div><h3>一則一則手動發，發到放棄</h3><p>幾百個對話一個一個複製貼上，發到一半就累了，更別說還要附圖、還要每週固定發。</p></div>
       <div class="card"><div class="q">狀況三</div><h3>想定期發公告，卻沒有排程工具</h3><p>Meta 原生介面沒有「每週一早上十點自動發給大家」這種功能，只能靠人記得。</p></div>
     </div>
+  </div>
+</section>
+
+<section class="who">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">適合誰</div>
+      <h2>只要你的粉專收件匣裡有客人，就用得上</h2>
+      <p>特別是正在投「開啟訊息」廣告、對話一直累積，卻沒有辦法再次觸達的這些行業。</p>
+    </div>
+    <div class="grid4">
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1b6fe8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h2l2 11h11l2-8H6"/><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/></svg></div>
+        <h3>電商 / 品牌</h3>
+        <p>新品上架、限時優惠、補貨通知，直接推給問過價卻還沒下單的客人。</p>
+        <span class="tag">每週促銷公告</span>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1b6fe8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-5 9 5-9 5z"/><path d="M7 11.5V16c0 1.5 2.5 3 5 3s5-1.5 5-3v-4.5"/><path d="M21 9v6"/></svg></div>
+        <h3>補教 / 才藝教室</h3>
+        <p>開課公告、報名截止提醒、停課與補課通知，一次通知所有詢問過的家長。</p>
+        <span class="tag">招生季排程發送</span>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1b6fe8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M12 9v6M9 12h6"/></svg></div>
+        <h3>診所 / 醫美</h3>
+        <p>療程優惠、門診時間異動、節慶活動，提醒曾經諮詢的客人回來預約。</p>
+        <span class="tag">回診與活動提醒</span>
+      </div>
+      <div class="card">
+        <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1b6fe8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div>
+        <h3>房仲 / 車仲</h3>
+        <p>新案釋出、賞屋活動、降價通知，持續跟進每一位曾經私訊詢問的買家。</p>
+        <span class="tag">新物件即時推播</span>
+      </div>
+    </div>
+    <p class="who-note">餐飲、美業、健身房、保險與各種服務業也一樣：曾經私訊你的人，就是最願意聽你說話的名單。</p>
   </div>
 </section>
 
