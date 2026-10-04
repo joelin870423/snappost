@@ -3,87 +3,368 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SnapPost 行銷快手 — 下載</title>
+<title>SnapPost 公告快手 — Facebook 粉專公告自動發送</title>
+<meta name="description" content="你有在投 Meta「開啟訊息」廣告嗎？SnapPost 公告快手把廣告帶進粉專的對話，變成可以定期觸達的名單。自動進入粉專收件匣，把文字與圖片公告送給每一位聯絡人。">
+<link rel="icon" href="favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#f5f6f8; --card:#fff; --line:#e3e6ea; --txt:#1c2733; --sub:#6b7a8c;
-          --pri:#2f6f4f; --pri-h:#275d42; --chip:#eef2f0; }
-  * { box-sizing:border-box; margin:0; }
-  body { font-family:"Microsoft JhengHei",system-ui,sans-serif; background:var(--bg); color:var(--txt); }
-  .wrap { max-width:760px; margin:0 auto; padding:28px 16px; }
-  .hero { text-align:center; padding:36px 0 26px; }
-  .hero h1 { font-size:30px; letter-spacing:1px; }
-  .hero p { color:var(--sub); margin-top:10px; font-size:15px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px; margin-bottom:16px; }
-  .dlbtn { display:inline-block; background:var(--pri); color:#fff; text-decoration:none; font-size:17px;
-           padding:14px 34px; border-radius:10px; margin-top:14px; }
-  .dlbtn:hover { background:var(--pri-h); }
-  .vchip { background:var(--chip); border-radius:6px; padding:3px 10px; font-size:13px; display:inline-block; }
-  .muted { color:var(--sub); font-size:13px; }
-  table { width:100%; border-collapse:collapse; font-size:13.5px; }
-  th,td { padding:8px; border-bottom:1px solid var(--line); text-align:left; }
-  th { color:var(--sub); font-weight:600; }
-  a.plain { color:var(--pri); }
-  .foot { text-align:center; margin-top:22px; font-size:14px; }
-  .foot a { color:var(--pri); text-decoration:none; margin:0 10px; }
-  h2 { font-size:17px; margin-bottom:12px; }
+  :root {
+    --blue:#1b6fe8; --blue-d:#1559c2; --blue-l:#e8f1fd; --blue-xl:#f3f7fd;
+    --ink:#17202b; --ink-2:#4a5664; --ink-3:#7b8794; --line:#e3e8ef; --card:#fff; --bg:#fff;
+    --ok:#1f9d55; --warn:#c7552f; --radius:14px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { scroll-behavior:smooth; }
+  body { font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif; color:var(--ink); background:var(--bg); line-height:1.65; }
+  a { color:inherit; text-decoration:none; }
+  .wrap { max-width:1120px; margin:0 auto; padding:0 20px; }
+  h1,h2,h3 { line-height:1.25; letter-spacing:.3px; }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:13px 26px; border-radius:10px; font-weight:700; font-size:16px; cursor:pointer; border:0; transition:.15s; }
+  .btn-pri { background:var(--blue); color:#fff; box-shadow:0 6px 18px rgba(27,111,232,.28); }
+  .btn-pri:hover { background:var(--blue-d); transform:translateY(-1px); }
+  .btn-sec { background:#fff; color:var(--blue); border:1.5px solid var(--blue); }
+  .btn-sec:hover { background:var(--blue-l); }
+  .btn.sm { padding:9px 18px; font-size:14px; }
+
+  /* nav */
+  nav { position:sticky; top:0; z-index:40; background:rgba(255,255,255,.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  nav .wrap { display:flex; align-items:center; gap:28px; height:66px; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:900; font-size:18px; color:var(--blue); white-space:nowrap; }
+  .brand span { color:var(--ink); font-weight:700; }
+  .navlinks { display:flex; gap:4px; margin-left:auto; }
+  .navlinks a, .navlinks button { background:none; border:0; font:inherit; font-size:15px; font-weight:500; color:var(--ink-2); padding:8px 14px; border-radius:8px; cursor:pointer; }
+  .navlinks a:hover, .navlinks button:hover { background:var(--blue-xl); color:var(--blue); }
+  .navlinks .on { color:var(--blue); background:var(--blue-l); font-weight:700; }
+  .nav-cta { margin-left:8px; }
+  .burger { display:none; margin-left:auto; background:none; border:0; font-size:26px; cursor:pointer; color:var(--ink-2); }
+
+  /* hero */
+  .hero { background:radial-gradient(900px 420px at 15% -10%, #dce9fb 0%, transparent 60%), radial-gradient(700px 400px at 95% 10%, #e9f1fd 0%, transparent 55%), var(--bg); padding:72px 0 56px; }
+  .hero .wrap { display:grid; grid-template-columns:1.05fr .95fr; gap:40px; align-items:center; }
+  .eyebrow { display:inline-block; background:var(--blue-l); color:var(--blue); font-weight:700; font-size:13px; padding:5px 12px; border-radius:999px; margin-bottom:18px; letter-spacing:.5px; }
+  .hero h1 { font-size:40px; font-weight:900; margin-bottom:10px; }
+  .hero h1 em { font-style:normal; color:var(--blue); }
+  .hero .h1b { font-size:40px; font-weight:900; margin-bottom:22px; }
+  .hero p.lead { font-size:17px; color:var(--ink-2); max-width:520px; margin-bottom:28px; }
+  .hero .cta { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .hero .note { font-size:13px; color:var(--ink-3); margin-top:14px; }
+  .hero-art { position:relative; }
+  .hero-art svg { width:100%; height:auto; display:block; }
+
+  /* sections */
+  section { padding:72px 0; }
+  section.alt { background:var(--blue-xl); }
+  .sec-head { text-align:center; max-width:680px; margin:0 auto 44px; }
+  .sec-head .kicker { color:var(--blue); font-weight:700; font-size:14px; letter-spacing:1px; margin-bottom:10px; }
+  .sec-head h2 { font-size:30px; font-weight:900; margin-bottom:12px; }
+  .sec-head p { color:var(--ink-2); font-size:16px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:26px 24px; }
+  .card .ico { width:48px; height:48px; border-radius:12px; background:var(--blue-l); display:flex; align-items:center; justify-content:center; margin-bottom:16px; }
+  .card .ico svg { width:26px; height:26px; }
+  .card h3 { font-size:18px; font-weight:700; margin-bottom:8px; }
+  .card p { color:var(--ink-2); font-size:14.5px; }
+  .pain .card { border-top:4px solid var(--blue); }
+  .pain .card .q { font-size:13px; color:var(--ink-3); margin-bottom:6px; }
+
+  .steps { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; counter-reset:s; }
+  .step { position:relative; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:28px 24px 24px; }
+  .step .n { position:absolute; top:-16px; left:22px; width:34px; height:34px; border-radius:50%; background:var(--blue); color:#fff; font-weight:900; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 12px rgba(27,111,232,.3); }
+  .step svg { width:100%; height:130px; display:block; margin:6px 0 14px; }
+  .step h3 { font-size:17px; margin-bottom:6px; } .step p { color:var(--ink-2); font-size:14.5px; }
+
+  .band { background:linear-gradient(135deg, var(--blue) 0%, #2a8bff 100%); color:#fff; border-radius:20px; padding:46px 40px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap; }
+  .band h2 { font-size:28px; font-weight:900; margin-bottom:6px; } .band p { opacity:.92; }
+  .band .btn { background:#fff; color:var(--blue); box-shadow:none; }
+  .band .btn:hover { background:#eef4ff; }
+
+  /* download tab */
+  .dl-hero { background:var(--blue-xl); padding:56px 0 40px; text-align:center; }
+  .dl-hero h1 { font-size:32px; font-weight:900; margin-bottom:8px; }
+  .dl-hero p { color:var(--ink-2); }
+  .latest { max-width:720px; margin:-28px auto 40px; background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:30px; text-align:center; box-shadow:0 10px 30px rgba(23,32,43,.06); }
+  .vchip { display:inline-block; background:var(--blue-l); color:var(--blue); font-weight:700; border-radius:999px; padding:5px 14px; font-size:14px; }
+  .latest .notes { margin:14px auto 20px; color:var(--ink-2); max-width:560px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th,td { padding:11px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  th { color:var(--ink-3); font-weight:600; font-size:13px; }
+  .dl-cols { display:grid; grid-template-columns:1.3fr 1fr; gap:24px; margin-top:28px; }
+  .box { background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:24px; }
+  .box h3 { font-size:17px; margin-bottom:12px; }
+  .box ol, .box ul { padding-left:20px; color:var(--ink-2); font-size:14.5px; } .box li { margin:6px 0; }
+  .callout { background:#fff7ed; border:1px solid #fde4c8; border-radius:10px; padding:14px 16px; font-size:14px; color:#7a4a1a; margin-top:14px; }
+  .muted { color:var(--ink-3); font-size:13px; }
+  a.plain { color:var(--blue); font-weight:600; }
+
+  footer { border-top:1px solid var(--line); padding:28px 0; color:var(--ink-3); font-size:13.5px; }
+  footer .wrap { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  footer a { color:var(--ink-2); margin-left:16px; }
+
+  .tab { display:none; } .tab.on { display:block; }
+
+  @media (max-width:900px) {
+    .hero .wrap { grid-template-columns:1fr; } .hero { padding:44px 0 36px; }
+    .hero h1, .hero .h1b { font-size:30px; }
+    .grid3, .steps { grid-template-columns:1fr; } .dl-cols { grid-template-columns:1fr; }
+    .navlinks { display:none; position:absolute; top:66px; left:0; right:0; background:#fff; border-bottom:1px solid var(--line); flex-direction:column; padding:10px 16px 16px; }
+    .navlinks.open { display:flex; } .burger { display:block; } .nav-cta { margin-left:0; }
+    .band { padding:32px 24px; } section { padding:52px 0; }
+    .hide-m { display:none; }
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="hero">
-    <h1>SnapPost 行銷快手</h1>
-    <p>Facebook 粉專自動化行銷工具 — 批次發送、排程管理、成效追蹤</p>
-  </div>
 
-  <div class="card" style="text-align:center" id="latest">
-    <div class="muted">載入中...</div>
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#intro" onclick="showTab('intro')">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><rect width="30" height="30" rx="8" fill="#1b6fe8"/><path d="M8 10.5a2.5 2.5 0 0 1 5 0V16a2 2 0 0 0 4 0v-5.5a2.5 2.5 0 0 1 5 0V16a7 7 0 0 1-14 0z" fill="#fff"/></svg>
+      SnapPost <span>公告快手</span>
+    </a>
+    <button class="burger" onclick="document.querySelector('.navlinks').classList.toggle('open')" aria-label="選單">☰</button>
+    <div class="navlinks">
+      <button id="nav-intro" class="on" onclick="showTab('intro')">產品介紹</button>
+      <button onclick="showTab('intro');setTimeout(()=>document.getElementById('features').scrollIntoView({behavior:'smooth'}),50)">功能</button>
+      <button id="nav-download" onclick="showTab('download')">下載</button>
+      <a href="portal.html">會員中心</a>
+      <button class="btn btn-pri sm nav-cta" onclick="showTab('download')">免費試用</button>
+    </div>
   </div>
+</nav>
 
-  <div class="card">
-    <h2>歷史版本</h2>
-    <table><thead><tr><th>版本</th><th>日期</th><th>說明</th><th></th></tr></thead>
-    <tbody id="hist"><tr><td colspan="4" class="muted">載入中...</td></tr></tbody></table>
+<!-- ================= 產品介紹 ================= -->
+<div id="tab-intro" class="tab on">
+
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">FACEBOOK 粉專公告自動化</div>
+      <h1>你有在投 Meta<em>「開啟訊息」</em>廣告嗎？</h1>
+      <div class="h1b">粉專裡面的人，想要定期發公告嗎？</div>
+      <p class="lead">廣告把客人帶進對話框，卻只能聊一次就斷線？SnapPost 公告快手自動進入粉專收件匣，把文字與圖片公告一則一則送給每一位聯絡人，讓廣告預算換來的名單，變成可以定期觸達的資產。</p>
+      <div class="cta">
+        <button class="btn btn-pri" onclick="showTab('download')">免費下載試用</button>
+        <a class="btn btn-sec" href="#features">看看它怎麼做</a>
+      </div>
+      <div class="note">註冊即開通 30 天試用 · Windows 10 / 11 · 不需要任何程式基礎</div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 560 440" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1b6fe8"/><stop offset="1" stop-color="#2a8bff"/></linearGradient>
+          <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#1b6fe8" flood-opacity=".18"/></filter>
+        </defs>
+        <circle cx="300" cy="230" r="190" fill="#eaf2fd"/>
+        <!-- 粉專 / 電腦 -->
+        <g filter="url(#sh)">
+          <rect x="70" y="120" width="230" height="200" rx="18" fill="#fff" stroke="#e3e8ef"/>
+          <rect x="70" y="120" width="230" height="46" rx="18" fill="url(#g1)"/>
+          <rect x="70" y="150" width="230" height="16" fill="url(#g1)"/>
+          <circle cx="96" cy="143" r="11" fill="#fff" opacity=".9"/>
+          <rect x="114" y="137" width="90" height="12" rx="6" fill="#fff" opacity=".9"/>
+          <!-- 文案 -->
+          <rect x="90" y="182" width="150" height="12" rx="6" fill="#dbe7fa"/>
+          <rect x="90" y="202" width="190" height="12" rx="6" fill="#dbe7fa"/>
+          <rect x="90" y="222" width="120" height="12" rx="6" fill="#dbe7fa"/>
+          <!-- 圖片 -->
+          <rect x="90" y="246" width="88" height="56" rx="8" fill="#eaf2fd" stroke="#cfe0fa"/>
+          <path d="M98 294 L120 270 L136 284 L148 274 L170 294 Z" fill="#9cc0f4"/>
+          <circle cx="156" cy="262" r="6" fill="#ffd166"/>
+          <!-- 送出按鈕 -->
+          <rect x="190" y="262" width="92" height="36" rx="10" fill="#1b6fe8"/>
+          <path d="M214 280 h30 M236 272 l10 8 -10 8" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <!-- 發送線 -->
+        <g stroke="#1b6fe8" stroke-width="2.5" stroke-dasharray="6 7" fill="none" opacity=".7">
+          <path d="M300 230 C 350 230, 360 110, 410 110"/>
+          <path d="M300 230 C 350 230, 360 190, 410 190"/>
+          <path d="M300 230 C 350 230, 360 270, 410 270"/>
+          <path d="M300 230 C 350 230, 360 350, 410 350"/>
+        </g>
+        <!-- 聯絡人 -->
+        <g font-family="Noto Sans TC, sans-serif" font-size="12" fill="#4a5664">
+          <g transform="translate(410 86)"><rect width="120" height="48" rx="12" fill="#fff" stroke="#e3e8ef"/><circle cx="24" cy="24" r="13" fill="#ffd9c2"/><circle cx="24" cy="20" r="5" fill="#c97b57"/><rect x="46" y="14" width="58" height="8" rx="4" fill="#dbe7fa"/><rect x="46" y="28" width="38" height="8" rx="4" fill="#eaf2fd"/><circle cx="104" cy="12" r="9" fill="#1f9d55"/><path d="M100 12 l3 3 5-6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></g>
+          <g transform="translate(410 166)"><rect width="120" height="48" rx="12" fill="#fff" stroke="#e3e8ef"/><circle cx="24" cy="24" r="13" fill="#cfe6ff"/><circle cx="24" cy="20" r="5" fill="#4a7fc1"/><rect x="46" y="14" width="58" height="8" rx="4" fill="#dbe7fa"/><rect x="46" y="28" width="46" height="8" rx="4" fill="#eaf2fd"/><circle cx="104" cy="12" r="9" fill="#1f9d55"/><path d="M100 12 l3 3 5-6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></g>
+          <g transform="translate(410 246)"><rect width="120" height="48" rx="12" fill="#fff" stroke="#e3e8ef"/><circle cx="24" cy="24" r="13" fill="#e4d7ff"/><circle cx="24" cy="20" r="5" fill="#7a5bc7"/><rect x="46" y="14" width="58" height="8" rx="4" fill="#dbe7fa"/><rect x="46" y="28" width="30" height="8" rx="4" fill="#eaf2fd"/><circle cx="104" cy="12" r="9" fill="#1f9d55"/><path d="M100 12 l3 3 5-6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></g>
+          <g transform="translate(410 326)"><rect width="120" height="48" rx="12" fill="#fff" stroke="#e3e8ef"/><circle cx="24" cy="24" r="13" fill="#d8f3e3"/><circle cx="24" cy="20" r="5" fill="#2f8f5b"/><rect x="46" y="14" width="58" height="8" rx="4" fill="#dbe7fa"/><rect x="46" y="28" width="52" height="8" rx="4" fill="#eaf2fd"/><circle cx="104" cy="12" r="9" fill="#1b6fe8"/><path d="M101 12 h6" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>
+        </g>
+        <!-- 時鐘 / 排程 -->
+        <g transform="translate(60 40)"><circle cx="30" cy="30" r="26" fill="#fff" stroke="#e3e8ef"/><circle cx="30" cy="30" r="3" fill="#1b6fe8"/><path d="M30 30 V14 M30 30 L42 36" stroke="#1b6fe8" stroke-width="3" stroke-linecap="round"/></g>
+        <!-- 統計 -->
+        <g transform="translate(120 350)"><rect width="150" height="60" rx="12" fill="#fff" stroke="#e3e8ef"/><rect x="16" y="34" width="14" height="14" rx="3" fill="#9cc0f4"/><rect x="38" y="24" width="14" height="24" rx="3" fill="#5b9af0"/><rect x="60" y="14" width="14" height="34" rx="3" fill="#1b6fe8"/><rect x="82" y="20" width="14" height="28" rx="3" fill="#5b9af0"/><rect x="104" y="10" width="14" height="38" rx="3" fill="#1b6fe8"/></g>
+      </svg>
+    </div>
   </div>
+</header>
 
-  <div class="foot">
-    <a href="portal.html">會員登入查詢</a>｜<a href="admin.html">管理後台</a>
+<section class="pain">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">你可能遇到的狀況</div>
+      <h2>廣告把人帶進來了，然後呢？</h2>
+      <p>「開啟訊息」廣告讓客人主動私訊粉專，但大多數粉專只回了第一句，之後就再也沒有觸達過這些人。</p>
+    </div>
+    <div class="grid3">
+      <div class="card"><div class="q">狀況一</div><h3>名單躺在收件匣裡沒再用</h3><p>每一則對話都是花廣告費買來的。新品、優惠、活動要公告時，卻沒有方法一次通知所有聊過的人。</p></div>
+      <div class="card"><div class="q">狀況二</div><h3>一則一則手動發，發到放棄</h3><p>幾百個對話一個一個複製貼上，發到一半就累了，更別說還要附圖、還要每週固定發。</p></div>
+      <div class="card"><div class="q">狀況三</div><h3>想定期發公告，卻沒有排程工具</h3><p>Meta 原生介面沒有「每週一早上十點自動發給大家」這種功能，只能靠人記得。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="features">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">核心功能</div>
+      <h2>把粉專收件匣變成你的公告頻道</h2>
+      <p>安裝在你的 Windows 電腦上，透過網頁介面設定，系統自動進入 Meta Business Suite 收件匣完成發送。</p>
+    </div>
+    <div class="grid3">
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1b6fe8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v12H7l-3 3z"/><path d="M8 9h8M8 12h5"/></svg></div><h3>自動群發訊息</h3><p>自動登入 Facebook、進入粉專收件匣，逐一發送文字與圖片訊息給所有聯絡人，不用手動操作。</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1b6fe8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="8" height="7" rx="2"/><rect x="13" y="4" width="8" height="7" rx="2"/><rect x="3" y="13" width="8" height="7" rx="2"/><rect x="13" y="13" width="8" height="7" rx="2"/></svg></div><h3>多帳號、多粉專並行</h3><p>同時在多個粉絲專頁執行發送任務，各自獨立運作、互不干擾，效率加倍。</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1b6fe8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h3>排程定期發送</h3><p>設定每週排程，系統自動在指定時間執行，公告準時送達，你不用記得。</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1b6fe8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div><h3>反偵測技術</h3><p>採用 Undetected Chrome Driver 與多項反偵測措施，模擬真人操作節奏，降低被限制的風險。</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1b6fe8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div><h3>任務追蹤與統計</h3><p>完整發送記錄、成功與失敗統計、每日儀表板，每一次任務的成效都看得到。</p></div>
+      <div class="card"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="#1b6fe8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/></svg></div><h3>自動更新</h3><p>軟體每 10 分鐘自動檢查新版本，一鍵更新，帳號設定與素材完整保留。</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">三步驟開始</div>
+      <h2>十分鐘內發出第一則公告</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">1</div>
+        <svg viewBox="0 0 300 130" fill="none"><rect x="60" y="20" width="180" height="90" rx="12" fill="#eaf2fd"/><rect x="100" y="42" width="100" height="40" rx="8" fill="#1b6fe8"/><path d="M150 50v18M142 60l8 8 8-8" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><rect x="90" y="92" width="120" height="8" rx="4" fill="#cfe0fa"/></svg>
+        <h3>下載安裝</h3><p>下載安裝檔，執行後會自動開啟網頁介面，註冊帳號即開通 30 天試用。</p></div>
+      <div class="step"><div class="n">2</div>
+        <svg viewBox="0 0 300 130" fill="none"><rect x="60" y="20" width="180" height="90" rx="12" fill="#eaf2fd"/><circle cx="110" cy="65" r="22" fill="#fff" stroke="#9cc0f4"/><circle cx="110" cy="58" r="8" fill="#5b9af0"/><path d="M96 80c3-9 25-9 28 0" fill="#5b9af0"/><rect x="146" y="46" width="70" height="10" rx="5" fill="#cfe0fa"/><rect x="146" y="64" width="50" height="10" rx="5" fill="#cfe0fa"/><rect x="146" y="82" width="60" height="12" rx="6" fill="#1b6fe8"/></svg>
+        <h3>登入粉專、上傳素材</h3><p>新增 Facebook 帳號，上傳要發送的文字檔與圖片，一套素材可重複使用。</p></div>
+      <div class="step"><div class="n">3</div>
+        <svg viewBox="0 0 300 130" fill="none"><rect x="60" y="20" width="180" height="90" rx="12" fill="#eaf2fd"/><rect x="80" y="36" width="140" height="14" rx="7" fill="#fff" stroke="#9cc0f4"/><rect x="80" y="58" width="140" height="14" rx="7" fill="#fff" stroke="#9cc0f4"/><rect x="80" y="80" width="90" height="14" rx="7" fill="#fff" stroke="#9cc0f4"/><circle cx="200" cy="87" r="16" fill="#1f9d55"/><path d="M193 87l5 5 9-10" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <h3>選粉專、按開始</h3><p>選擇目標粉專，設定間隔或每週排程，按下開始，之後交給它。</p></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding-top:0">
+  <div class="wrap">
+    <div class="band">
+      <div><h2>讓每一筆廣告預算，不只換來一次對話</h2><p>免費試用 30 天，不需要信用卡。</p></div>
+      <button class="btn" onclick="showTab('download')">立即下載試用</button>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- ================= 下載 ================= -->
+<div id="tab-download" class="tab">
+  <div class="dl-hero">
+    <div class="wrap">
+      <h1>下載 SnapPost 公告快手</h1>
+      <p>Windows 10 / 11 · 安裝後開啟即可註冊試用 · 更新不影響你的資料</p>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="latest" id="latest"><div class="muted">載入中...</div></div>
+
+    <div class="dl-cols">
+      <div class="box">
+        <h3>快速開始</h3>
+        <ol>
+          <li><b>下載</b>：取得上方最新版本的安裝檔</li>
+          <li><b>安裝</b>：執行安裝檔，依指示完成</li>
+          <li><b>啟動</b>：執行 SnapPost，瀏覽器會自動開啟操作介面</li>
+          <li><b>註冊</b>：建立帳號（有推薦碼可一併填入），自動開通試用</li>
+          <li><b>設定帳號</b>：新增 Facebook 帳號並登入粉專</li>
+          <li><b>上傳素材</b>：上傳文字檔（.txt）與圖片（.png / .jpg）</li>
+          <li><b>開始發送</b>：選擇目標粉專、設定參數，按下開始</li>
+        </ol>
+        <div class="callout">使用前請確認你的 Facebook 帳號狀態正常。頻繁大量發送可能觸發 Facebook 的安全機制，建議設定合理的發送間隔。</div>
+      </div>
+      <div class="box">
+        <h3>系統需求</h3>
+        <ul>
+          <li>作業系統：Windows 10 / 11</li>
+          <li>瀏覽器：Google Chrome（最新版本）</li>
+          <li>網路：穩定的網際網路連線</li>
+          <li>螢幕：解析度 1280 × 720 以上</li>
+          <li>硬碟空間：至少 500 MB</li>
+        </ul>
+        <h3 style="margin-top:22px">更新與資料</h3>
+        <p class="muted">軟體每 10 分鐘自動檢查新版本。更新時 data/（帳號設定、Cookie、發送記錄）與 contents/（素材）會完整保留。</p>
+        <h3 style="margin-top:22px">已經是會員？</h3>
+        <p class="muted"><a class="plain" href="portal.html">登入會員中心</a> 查看到期日、剩餘訊息數、發送紀錄與你的推薦碼。</p>
+      </div>
+    </div>
+
+    <div class="box" style="margin-top:24px">
+      <h3>歷史版本</h3>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>版本</th><th>日期</th><th>更新說明</th><th></th></tr></thead>
+        <tbody id="hist"><tr><td colspan="4" class="muted">載入中...</td></tr></tbody>
+      </table></div>
+    </div>
   </div>
 </div>
+
+<footer>
+  <div class="wrap">
+    <div>© SnapPost 公告快手</div>
+    <div><a href="portal.html">會員中心</a><a href="admin.html">管理後台</a></div>
+  </div>
+</footer>
 
 <script>
 const SUPABASE_URL = "https://xsagokraqdmcmbjvctwy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWdva3JhcWRtY21ianZjdHd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzg4OTksImV4cCI6MjEwNjYxNDg5OX0.MEaRqWq7EREH0LPklw-3ERRwvcA2PMuhjpyH5lQUVMw";
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-async function load() {
+function showTab(t) {
+  document.getElementById('tab-intro').classList.toggle('on', t === 'intro');
+  document.getElementById('tab-download').classList.toggle('on', t === 'download');
+  document.getElementById('nav-intro').classList.toggle('on', t === 'intro');
+  document.getElementById('nav-download').classList.toggle('on', t === 'download');
+  document.querySelector('.navlinks').classList.remove('open');
+  if (location.hash !== '#' + t) history.replaceState(null, '', '#' + t);
+  window.scrollTo({ top: 0 });
+  if (t === 'download' && !window._dlLoaded) loadDownloads();
+}
+
+async function loadDownloads() {
+  window._dlLoaded = true;
   try {
     const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/sp_get_downloads', {
       method: 'POST',
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-                 'Content-Type': 'application/json' },
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_limit: 50 })
     });
     const rows = await r.json();
     if (!Array.isArray(rows) || !rows.length) {
-      document.getElementById('latest').innerHTML = '<div class="muted">目前沒有可下載的版本</div>';
-      return;
+      document.getElementById('latest').innerHTML = '<div class="muted">目前沒有可下載的版本</div>'; return;
     }
     const top = rows[0];
     document.getElementById('latest').innerHTML =
-      '<span class="vchip">最新版 v' + esc(top.version) + '（' + esc(top.released_at) + '）</span>' +
-      '<div style="margin-top:10px">' + esc(top.release_notes || '') + '</div>' +
-      '<a class="dlbtn" href="' + esc(top.download_url) + '">下載安裝檔</a>' +
-      '<div class="muted" style="margin-top:12px">Windows 10/11 · 安裝後開啟即可註冊試用</div>';
+      '<span class="vchip">最新版 v' + esc(top.version) + '　' + esc(top.released_at) + '</span>' +
+      '<div class="notes">' + esc(top.release_notes || '') + '</div>' +
+      '<a class="btn btn-pri" href="' + esc(top.download_url) + '">下載安裝檔</a>' +
+      '<div class="muted" style="margin-top:12px">Windows 安裝檔 · 若出現 SmartScreen 提示，點「其他資訊」→「仍要執行」</div>';
     document.getElementById('hist').innerHTML = rows.slice(1).map(v =>
       '<tr><td>v' + esc(v.version) + '</td><td style="white-space:nowrap">' + esc(v.released_at) + '</td>' +
-      '<td>' + esc(v.release_notes || '') + '</td>' +
-      '<td><a class="plain" href="' + esc(v.download_url) + '">下載</a></td></tr>'
+      '<td>' + esc(v.release_notes || '') + '</td><td><a class="plain" href="' + esc(v.download_url) + '">下載</a></td></tr>'
     ).join('') || '<tr><td colspan="4" class="muted">無</td></tr>';
   } catch (e) {
     document.getElementById('latest').innerHTML = '<div class="muted">載入失敗，請重新整理</div>';
   }
 }
-load();
+
+showTab(location.hash === '#download' ? 'download' : 'intro');
+window.addEventListener('hashchange', () => showTab(location.hash === '#download' ? 'download' : 'intro'));
 </script>
 </body>
 </html>
