@@ -23,7 +23,7 @@
   .chip.bad { background:#f7e5e0; color:var(--warn); }
   .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .top { display:flex; justify-content:space-between; align-items:center; margin:14px 0; flex-wrap:wrap; gap:8px; }
-  .tabs { display:flex; gap:6px; } .tabs button { background:#e8ebee; color:var(--txt); }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; } .tabs button { background:#e8ebee; color:var(--txt); }
   .tabs button.on { background:var(--pri); color:#fff; }
   #toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:#1c2733; color:#fff;
            padding:10px 18px; border-radius:8px; font-size:14px; display:none; z-index:60; max-width:90vw; }
@@ -113,7 +113,7 @@
         <label class="muted"><input type="checkbox" id="vForce"> 強制更新</label>
         <button onclick="addVersion()">登記版本</button>
       </div>
-      <h2>更新下載頁（官網 index 顯示的安裝檔）</h2>
+      <h2>更新下載頁（官網顯示的安裝檔）</h2>
       <div class="row" style="margin-bottom:16px">
         <input id="dVer" placeholder="版本號" style="width:140px">
         <input id="dUrl" placeholder="安裝檔 setup.exe 網址" style="flex:1;min-width:260px">
@@ -143,6 +143,7 @@
 <script>
 const SUPABASE_URL = "https://xsagokraqdmcmbjvctwy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWdva3JhcWRtY21ianZjdHd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzg4OTksImV4cCI6MjEwNjYxNDg5OX0.MEaRqWq7EREH0LPklw-3ERRwvcA2PMuhjpyH5lQUVMw";
+
 let ME = null, USERS = [];
 let AUTH = null;
 try { AUTH = JSON.parse(localStorage.getItem('sp_admin_auth') || 'null'); } catch (e) {}
@@ -158,6 +159,7 @@ function toast(msg, bad) {
   t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2600);
 }
 
+// ---------- auth（純 fetch，不依賴外部函式庫） ----------
 async function refreshToken() {
   if (!AUTH || !AUTH.refresh_token) return false;
   try {
@@ -181,20 +183,18 @@ async function rpc(fn, args, _retry) {
   if (r.status === 401 && !_retry && await refreshToken()) return rpc(fn, args, true);
   if (!r.ok) {
     let m = ''; try { m = (await r.json()).message || ''; } catch (e) {}
-    if (r.status === 401) { saveAuth(null); }
-    throw new Error(m || '操作失敗(' + r.status + ')');
+    if (r.status === 401) saveAuth(null);
+    throw new Error(m || ('操作失敗(' + r.status + ')'));
   }
   const t = await r.text();
   return (t && t !== 'null') ? JSON.parse(t) : null;
 }
 
-// ---------- auth ----------
 async function boot() {
-  if (!AUTH) { $('login').style.display = 'block'; return; }
+  if (!AUTH) return;
   try { ME = await rpc('adm_me'); } catch (e) { ME = null; }
   if (!ME) {
     saveAuth(null);
-    $('login').style.display = 'block';
     $('liMsg').textContent = '此帳號沒有管理權限，請聯絡超級管理員。';
     return;
   }
@@ -203,6 +203,7 @@ async function boot() {
   if (ME.role === 'super') { $('tabM').style.display = ''; $('tabV').style.display = ''; }
   loadUsers();
 }
+
 async function doLogin() {
   $('liMsg').textContent = '登入中...';
   try {
@@ -212,14 +213,23 @@ async function doLogin() {
     const j = await r.json();
     if (!r.ok) {
       const m = j.error_description || j.msg || j.error || '';
-      $('liMsg').textContent = '登入失敗：' + (m.includes('Invalid login') ? '帳號或密碼錯誤' : m || '帳號或密碼錯誤');
+      $('liMsg').textContent = '登入失敗：' + (m.indexOf('Invalid login') >= 0 ? '帳號或密碼錯誤' : (m || '帳號或密碼錯誤'));
       return;
     }
     saveAuth({ access_token: j.access_token, refresh_token: j.refresh_token });
-    $('liMsg').textContent = ''; boot();
+    $('liMsg').textContent = '';
+    boot();
   } catch (e) { $('liMsg').textContent = '連線失敗：' + e.message; }
 }
+
 function doLogout() { saveAuth(null); location.reload(); }
+
+// ---------- tabs ----------
+function showTab(t) {
+  for (const k of ['U', 'A', 'M', 'V']) {
+    $('pane' + k).style.display = k === t ? 'block' : 'none';
+    $('tab' + k).classList.toggle('on', k === t);
+  }
   if (t === 'A') loadAudit();
   if (t === 'M') loadAdmins();
   if (t === 'V') loadVersions();
@@ -243,7 +253,7 @@ const noteField = '<div class="field"><label>備註（選填，會記進稽核�
 async function loadUsers() {
   try { USERS = await rpc('adm_list_users', { p_search: $('q').value.trim() || null }); }
   catch (e) { toast(e.message, true); return; }
-  $('uRows').innerHTML = USERS.map((u, i) => {
+  $('uRows').innerHTML = (USERS || []).map(function (u, i) {
     const expired = u.expire_date && u.expire_date < new Date().toISOString().slice(0, 10);
     return '<tr>' +
       '<td><b>' + esc(u.username) + '</b>' + (u.device_bound ? '' : ' <span class="chip">未綁機</span>') + '</td>' +
@@ -307,7 +317,9 @@ function mdDevice(i) {
 }
 
 // ---------- audit ----------
-const ACT = { set_expire: '改到期日', add_days: '續費', set_quota: '改發訊量', set_status: '改狀態', set_device: '改綁機', set_admin: '管理員異動', add_version: '登記版本', del_version: '刪除版本', add_download: '更新下載頁' };
+const ACT = { set_expire: '改到期日', add_days: '續費', set_quota: '改發訊量', set_status: '改狀態',
+              set_device: '改綁機', set_admin: '管理員異動', add_version: '登記版本',
+              del_version: '刪除版本', add_download: '更新下載頁' };
 async function loadAudit() {
   let rows;
   try { rows = await rpc('adm_list_audit', { p_limit: 300, p_admin_email: ($('aFilter').value || null) }); }
@@ -315,11 +327,12 @@ async function loadAudit() {
   if (ME.role === 'super') {
     const sel = $('aFilter'); sel.style.display = '';
     if (!sel.options.length) {
-      const emails = [...new Set(rows.map(r => r.admin_email))];
+      const emails = [];
+      (rows || []).forEach(r => { if (emails.indexOf(r.admin_email) < 0) emails.push(r.admin_email); });
       sel.innerHTML = '<option value="">全部管理員</option>' + emails.map(e => '<option>' + esc(e) + '</option>').join('');
     }
   }
-  $('aRows').innerHTML = rows.map(r =>
+  $('aRows').innerHTML = (rows || []).map(r =>
     '<tr><td style="white-space:nowrap">' + esc(r.created_at) + '</td>' +
     '<td>' + esc(r.admin_email) + '</td>' +
     '<td><span class="chip">' + esc(ACT[r.action] || r.action) + '</span></td>' +
@@ -333,20 +346,33 @@ async function loadAudit() {
 async function loadAdmins() {
   let rows;
   try { rows = await rpc('adm_list_admins'); } catch (e) { toast(e.message, true); return; }
-  $('mRows').innerHTML = rows.map(a =>
+  $('mRows').innerHTML = (rows || []).map(a =>
     '<tr><td>' + esc(a.email) + '</td><td>' + esc(a.display_name) + '</td>' +
     '<td>' + (a.role === 'super' ? '超級管理員' : '業務') + '</td>' +
     '<td>' + (a.active ? '<span class="chip">啟用</span>' : '<span class="chip bad">停用</span>') + '</td>' +
     '<td>' + esc(a.created_at) + '</td></tr>').join('');
 }
+async function saveAdmin() {
+  try {
+    await rpc('adm_set_admin', {
+      p_email: $('mEmail').value.trim(), p_role: $('mRole').value,
+      p_active: $('mActive').value === 'true', p_display_name: $('mName').value.trim() || null
+    });
+    toast('已儲存'); $('mEmail').value = ''; $('mName').value = ''; loadAdmins();
+  } catch (e) {
+    toast(e.message.indexOf('auth_user_not_found') >= 0 ? '找不到這個 email 的登入帳號，請先在 Supabase Studio 建立' : e.message, true);
+  }
+}
+
+// ---------- versions (super) ----------
 async function loadVersions() {
   let rows;
   try { rows = await rpc('adm_list_versions'); } catch (e) { toast(e.message, true); return; }
-  $('vRows').innerHTML = rows.map(v =>
+  $('vRows').innerHTML = (rows || []).map(v =>
     '<tr><td><b>v' + esc(v.version) + '</b></td><td style="white-space:nowrap">' + esc(v.released_at) + '</td>' +
     '<td>' + (v.force_update ? '<span class="chip bad">強制</span>' : '') + '</td>' +
     '<td class="muted" style="max-width:300px">' + esc((v.release_notes || '').slice(0, 100)) + '</td>' +
-    '<td><button class="sm warn" onclick="delVersion('' + esc(v.version) + '')">刪除</button></td></tr>'
+    '<td><button class="sm warn" onclick="delVersion(\'' + esc(v.version) + '\')">刪除</button></td></tr>'
   ).join('') || '<tr><td colspan="5" class="muted">沒有版本</td></tr>';
 }
 async function addVersion() {
@@ -366,19 +392,8 @@ async function addDownload() {
   try {
     await rpc('adm_add_download', { p_version: $('dVer').value.trim(), p_download_url: $('dUrl').value.trim(),
       p_notes: $('dNotes').value.trim() });
-    toast('下載頁已更新'); 
+    toast('下載頁已更新');
   } catch (e) { toast(e.message, true); }
-}
-async function saveAdmin() {
-  try {
-    await rpc('adm_set_admin', {
-      p_email: $('mEmail').value.trim(), p_role: $('mRole').value,
-      p_active: $('mActive').value === 'true', p_display_name: $('mName').value.trim() || null
-    });
-    toast('已儲存'); $('mEmail').value = ''; $('mName').value = ''; loadAdmins();
-  } catch (e) {
-    toast(e.message.includes('auth_user_not_found') ? '找不到這個 email 的登入帳號，請先在 Supabase Studio 建立' : e.message, true);
-  }
 }
 
 $('liPw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
