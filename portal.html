@@ -33,7 +33,7 @@
 <body>
 <div class="wrap">
 
-  <div id="login" class="card" style="display:none">
+  <div id="login" class="card">
     <h1 style="margin-bottom:6px">會員中心</h1>
     <p class="muted" style="margin-bottom:14px">使用 SnapPost 軟體內註冊的帳號密碼登入</p>
     <input id="liUser" placeholder="帳號" autocomplete="username">
@@ -132,7 +132,6 @@ async function loadRecords() {
   }
 }
 
-$('login').style.display = 'block';
 $('liPw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 </script>
 </body>

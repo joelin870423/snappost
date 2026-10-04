@@ -43,7 +43,7 @@
 <body>
 <div class="wrap">
 
-  <div id="login" class="card" style="display:none">
+  <div id="login" class="card">
     <h1 style="margin-bottom:14px">SnapPost 管理後台</h1>
     <input id="liEmail" type="email" placeholder="Email" autocomplete="username">
     <input id="liPw" type="password" placeholder="密碼" autocomplete="current-password">
@@ -144,7 +144,9 @@
 <script>
 const SUPABASE_URL = "https://xsagokraqdmcmbjvctwy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWdva3JhcWRtY21ianZjdHd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzg4OTksImV4cCI6MjEwNjYxNDg5OX0.MEaRqWq7EREH0LPklw-3ERRwvcA2PMuhjpyH5lQUVMw";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let sb = null;
+try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
+catch (e) { document.getElementById('liMsg').textContent = '元件載入失敗：請關閉擋廣告外掛後重新整理（Ctrl+F5）'; }
 let ME = null, USERS = [];
 
 const $ = id => document.getElementById(id);
@@ -161,6 +163,7 @@ async function rpc(fn, args) {
 
 // ---------- auth ----------
 async function boot() {
+  if (!sb) return;
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { $('login').style.display = 'block'; return; }
   try { ME = await rpc('adm_me'); } catch (e) { ME = null; }
