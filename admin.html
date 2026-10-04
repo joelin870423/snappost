@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SnapPost 管理後台</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root { --bg:#f5f6f8; --card:#fff; --line:#e3e6ea; --txt:#1c2733; --sub:#6b7a8c;
           --pri:#2f6f4f; --pri-h:#275d42; --warn:#b4452c; --chip:#eef2f0; }
@@ -144,10 +143,13 @@
 <script>
 const SUPABASE_URL = "https://xsagokraqdmcmbjvctwy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWdva3JhcWRtY21ianZjdHd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzg4OTksImV4cCI6MjEwNjYxNDg5OX0.MEaRqWq7EREH0LPklw-3ERRwvcA2PMuhjpyH5lQUVMw";
-let sb = null;
-try { sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); }
-catch (e) { document.getElementById('liMsg').textContent = '元件載入失敗：請關閉擋廣告外掛後重新整理（Ctrl+F5）'; }
 let ME = null, USERS = [];
+let AUTH = null;
+try { AUTH = JSON.parse(localStorage.getItem('sp_admin_auth') || 'null'); } catch (e) {}
+function saveAuth(a) {
+  AUTH = a;
+  try { a ? localStorage.setItem('sp_admin_auth', JSON.stringify(a)) : localStorage.removeItem('sp_admin_auth'); } catch (e) {}
+}
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -155,22 +157,46 @@ function toast(msg, bad) {
   const t = $('toast'); t.textContent = msg; t.style.background = bad ? '#b4452c' : '#1c2733';
   t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2600);
 }
-async function rpc(fn, args) {
-  const { data, error } = await sb.rpc(fn, args || {});
-  if (error) throw new Error(error.message || '操作失敗');
-  return data;
+
+async function refreshToken() {
+  if (!AUTH || !AUTH.refresh_token) return false;
+  try {
+    const r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', {
+      method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: AUTH.refresh_token }) });
+    if (!r.ok) return false;
+    const j = await r.json();
+    saveAuth({ access_token: j.access_token, refresh_token: j.refresh_token });
+    return true;
+  } catch (e) { return false; }
+}
+
+async function rpc(fn, args, _retry) {
+  if (!AUTH) throw new Error('請先登入');
+  const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + AUTH.access_token,
+               'Content-Type': 'application/json' },
+    body: JSON.stringify(args || {}) });
+  if (r.status === 401 && !_retry && await refreshToken()) return rpc(fn, args, true);
+  if (!r.ok) {
+    let m = ''; try { m = (await r.json()).message || ''; } catch (e) {}
+    if (r.status === 401) { saveAuth(null); }
+    throw new Error(m || '操作失敗(' + r.status + ')');
+  }
+  const t = await r.text();
+  return (t && t !== 'null') ? JSON.parse(t) : null;
 }
 
 // ---------- auth ----------
 async function boot() {
-  if (!sb) return;
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { $('login').style.display = 'block'; return; }
+  if (!AUTH) { $('login').style.display = 'block'; return; }
   try { ME = await rpc('adm_me'); } catch (e) { ME = null; }
   if (!ME) {
+    saveAuth(null);
     $('login').style.display = 'block';
     $('liMsg').textContent = '此帳號沒有管理權限，請聯絡超級管理員。';
-    await sb.auth.signOut(); return;
+    return;
   }
   $('login').style.display = 'none'; $('app').style.display = 'block';
   $('meChip').textContent = (ME.display_name || ME.email) + '（' + (ME.role === 'super' ? '超級管理員' : '業務') + '）';
@@ -179,18 +205,21 @@ async function boot() {
 }
 async function doLogin() {
   $('liMsg').textContent = '登入中...';
-  const { error } = await sb.auth.signInWithPassword({ email: $('liEmail').value.trim(), password: $('liPw').value });
-  if (error) { $('liMsg').textContent = '登入失敗：' + error.message; return; }
-  $('liMsg').textContent = ''; boot();
+  try {
+    const r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: $('liEmail').value.trim(), password: $('liPw').value }) });
+    const j = await r.json();
+    if (!r.ok) {
+      const m = j.error_description || j.msg || j.error || '';
+      $('liMsg').textContent = '登入失敗：' + (m.includes('Invalid login') ? '帳號或密碼錯誤' : m || '帳號或密碼錯誤');
+      return;
+    }
+    saveAuth({ access_token: j.access_token, refresh_token: j.refresh_token });
+    $('liMsg').textContent = ''; boot();
+  } catch (e) { $('liMsg').textContent = '連線失敗：' + e.message; }
 }
-async function doLogout() { await sb.auth.signOut(); location.reload(); }
-
-// ---------- tabs ----------
-function showTab(t) {
-  for (const k of ['U', 'A', 'M', 'V']) {
-    $('pane' + k).style.display = k === t ? 'block' : 'none';
-    $('tab' + k).classList.toggle('on', k === t);
-  }
+function doLogout() { saveAuth(null); location.reload(); }
   if (t === 'A') loadAudit();
   if (t === 'M') loadAdmins();
   if (t === 'V') loadVersions();
@@ -352,6 +381,7 @@ async function saveAdmin() {
   }
 }
 
+$('liPw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 boot();
 </script>
 </body>
