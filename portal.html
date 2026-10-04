@@ -60,7 +60,7 @@
     </div>
     <div class="card" id="refCard" style="display:none">
       <h2>我推薦的使用者</h2>
-      <table><thead><tr><th>帳號</th><th>註冊日</th><th>狀態</th></tr></thead><tbody id="refRows"></tbody></table>
+      <div style="overflow-x:auto"><table><thead><tr><th>帳號</th><th>註冊日</th><th>到期日</th><th>已發送 / 上限</th><th>狀態</th></tr></thead><tbody id="refRows"></tbody></table></div>
     </div>
     <div class="card">
       <h2>發送紀錄</h2>
@@ -131,7 +131,10 @@ async function loadReferrals(n) {
   if (!n) { $('refCard').style.display = 'none'; return; }
   try {
     const rows = await rpc('sp_portal_referrals', CRED);
-    $('refRows').innerHTML = rows.map(r => '<tr><td>' + esc(r.username) + '</td><td>' + esc(r.created_at) + '</td><td>' +
+    const today = new Date().toISOString().slice(0, 10);
+    $('refRows').innerHTML = rows.map(r => '<tr><td>' + esc(r.username) + '</td><td>' + esc(r.created_at) + '</td>' +
+      '<td><span class="chip' + (r.expire_date && r.expire_date < today ? ' bad' : '') + '">' + esc(r.expire_date || '—') + '</span></td>' +
+      '<td>' + (r.messages_sent || 0).toLocaleString() + ' / ' + (r.message_limit || 0).toLocaleString() + '</td><td>' +
       (r.status === 'active' ? '<span class="chip">正常</span>' : '<span class="chip bad">停權</span>') + '</td></tr>').join('');
     $('refCard').style.display = 'block';
   } catch (e) {}

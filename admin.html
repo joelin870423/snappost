@@ -98,8 +98,9 @@
         <select id="mActive"><option value="true">啟用</option><option value="false">停用</option></select>
         <button onclick="saveAdmin()">儲存</button>
       </div>
-      <table><thead><tr><th>Email</th><th>名稱</th><th>角色</th><th>狀態</th><th>建立日</th></tr></thead>
-      <tbody id="mRows"></tbody></table>
+      <p class="muted" style="margin-bottom:8px">權限開關即時生效：「會員管理」= 調到期日/發訊量/停權/推薦人；「版本管理」= 登記/刪除程式版本與更新下載頁（一般管理員預設關閉）。超級管理員永遠全開。</p>
+      <div style="overflow-x:auto"><table><thead><tr><th>Email</th><th>名稱</th><th>角色</th><th>狀態</th><th>會員管理</th><th>版本管理</th><th>建立日</th></tr></thead>
+      <tbody id="mRows"></tbody></table></div>
     </div>
 
     <div id="paneV" class="card" style="display:none">
@@ -184,6 +185,7 @@ async function rpc(fn, args, _retry) {
   if (!r.ok) {
     let m = ''; try { m = (await r.json()).message || ''; } catch (e) {}
     if (r.status === 401) saveAuth(null);
+    if (m.indexOf('no_permission') >= 0) m = '你沒有這項操作的權限，請聯絡超級管理員';
     throw new Error(m || ('操作失敗(' + r.status + ')'));
   }
   const t = await r.text();
@@ -200,7 +202,9 @@ async function boot() {
   }
   $('login').style.display = 'none'; $('app').style.display = 'block';
   $('meChip').textContent = (ME.display_name || ME.email) + '（' + (ME.role === 'super' ? '超級管理員' : '業務') + '）';
-  if (ME.role === 'super') { $('tabM').style.display = ''; $('tabV').style.display = ''; }
+  ME.perms = ME.perms || {};
+  if (ME.role === 'super') $('tabM').style.display = '';
+  if (ME.role === 'super' || ME.perms.versions) $('tabV').style.display = '';
   loadUsers();
 }
 
@@ -264,14 +268,14 @@ async function loadUsers() {
       '<td class="hide-m">' + esc(u.referred_by || '—') + '</td>' +
       '<td class="hide-m">' + esc(u.app_version || '—') + '</td>' +
       '<td class="hide-m">' + esc(u.created_at) + '</td>' +
-      '<td class="row" style="min-width:270px">' +
+      '<td class="row" style="min-width:270px">' + (!(ME.role === 'super' || ME.perms.users) ? '<span class="muted">唯讀</span>' : (
         '<button class="sm" onclick="quickDays(' + i + ',30)">+30天</button>' +
         '<button class="sm" onclick="quickDays(' + i + ',90)">+90天</button>' +
         '<button class="sm sec" onclick="mdExpire(' + i + ')">改到期</button>' +
         '<button class="sm sec" onclick="mdQuota(' + i + ')">改量</button>' +
         '<button class="sm ' + (u.status === 'active' ? 'warn' : '') + '" onclick="mdStatus(' + i + ')">' + (u.status === 'active' ? '停權' : '復權') + '</button>' +
         '<button class="sm sec" onclick="mdReferrer(' + i + ')">改推薦人</button>' +
-        (ME.role === 'super' ? '<button class="sm sec" onclick="mdDevice(' + i + ')">改綁機</button>' : '') +
+        (ME.role === 'super' ? '<button class="sm sec" onclick="mdDevice(' + i + ')">改綁機</button>' : ''))) +
       '</td></tr>';
   }).join('') || '<tr><td colspan="9" class="muted">沒有資料</td></tr>';
 }
@@ -358,17 +362,33 @@ async function loadAudit() {
 async function loadAdmins() {
   let rows;
   try { rows = await rpc('adm_list_admins'); } catch (e) { toast(e.message, true); return; }
-  $('mRows').innerHTML = (rows || []).map(a =>
-    '<tr><td>' + esc(a.email) + '</td><td>' + esc(a.display_name) + '</td>' +
+  ADMINS = rows || [];
+  $('mRows').innerHTML = ADMINS.map((a, i) => {
+    const pm = a.perms || {};
+    const cb = (k, on) => a.role === 'super' ? '<span class="chip">全開</span>'
+      : '<input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="setPerm(' + i + ',' + JSON.stringify(k).replace(/"/g, '&quot;') + ',this.checked)">';
+    return '<tr><td>' + esc(a.email) + '</td><td>' + esc(a.display_name) + '</td>' +
     '<td>' + (a.role === 'super' ? '超級管理員' : '業務') + '</td>' +
     '<td>' + (a.active ? '<span class="chip">啟用</span>' : '<span class="chip bad">停用</span>') + '</td>' +
-    '<td>' + esc(a.created_at) + '</td></tr>').join('');
+    '<td>' + cb('users', pm.users !== false) + '</td>' +
+    '<td>' + cb('versions', pm.versions === true) + '</td>' +
+    '<td>' + esc(a.created_at) + '</td></tr>';
+  }).join('');
+}
+let ADMINS = [];
+async function setPerm(i, key, on) {
+  const a = ADMINS[i]; const perms = Object.assign({ users: true, versions: false }, a.perms || {}); perms[key] = on;
+  try {
+    await rpc('adm_set_admin', { p_email: a.email, p_role: a.role, p_active: a.active, p_display_name: null, p_perms: perms });
+    toast('權限已更新'); loadAdmins();
+  } catch (e) { toast(e.message, true); loadAdmins(); }
 }
 async function saveAdmin() {
   try {
     await rpc('adm_set_admin', {
       p_email: $('mEmail').value.trim(), p_role: $('mRole').value,
-      p_active: $('mActive').value === 'true', p_display_name: $('mName').value.trim() || null
+      p_active: $('mActive').value === 'true', p_display_name: $('mName').value.trim() || null,
+      p_perms: { users: true, versions: false }
     });
     toast('已儲存'); $('mEmail').value = ''; $('mName').value = ''; loadAdmins();
   } catch (e) {
