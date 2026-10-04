@@ -54,6 +54,13 @@
       <div class="stat"><div class="k">有效期限</div><div class="v" id="sExpire">—</div></div>
       <div class="stat"><div class="k">剩餘可發訊息</div><div class="v" id="sRemain">—</div></div>
       <div class="stat"><div class="k">已發送 / 上限</div><div class="v" id="sUsage">—</div></div>
+      <div class="stat"><div class="k">我的推薦碼</div><div class="v" id="sCode" style="font-family:monospace;letter-spacing:2px">—</div>
+        <div class="muted" id="sRefBy"></div></div>
+      <div class="stat"><div class="k">已推薦人數</div><div class="v" id="sRefs">—</div></div>
+    </div>
+    <div class="card" id="refCard" style="display:none">
+      <h2>我推薦的使用者</h2>
+      <table><thead><tr><th>帳號</th><th>註冊日</th><th>狀態</th></tr></thead><tbody id="refRows"></tbody></table>
     </div>
     <div class="card">
       <h2>發送紀錄</h2>
@@ -109,11 +116,25 @@ function show(me) {
   $('sExpire').textContent = me.expire_date || '—';
   $('sRemain').textContent = me.remaining.toLocaleString();
   $('sUsage').textContent = me.messages_sent.toLocaleString() + ' / ' + me.message_limit.toLocaleString();
+  $('sCode').textContent = me.referral_code || '—';
+  $('sRefBy').textContent = me.referred_by ? '推薦人：' + me.referred_by : '';
+  $('sRefs').textContent = (me.referrals || 0).toLocaleString();
+  loadReferrals(me.referrals || 0);
 }
 
 async function refresh() {
   if (!CRED) return;
   try { show(await rpc('sp_portal_me', CRED)); loadRecords(); } catch (e) {}
+}
+
+async function loadReferrals(n) {
+  if (!n) { $('refCard').style.display = 'none'; return; }
+  try {
+    const rows = await rpc('sp_portal_referrals', CRED);
+    $('refRows').innerHTML = rows.map(r => '<tr><td>' + esc(r.username) + '</td><td>' + esc(r.created_at) + '</td><td>' +
+      (r.status === 'active' ? '<span class="chip">正常</span>' : '<span class="chip bad">停權</span>') + '</td></tr>').join('');
+    $('refCard').style.display = 'block';
+  } catch (e) {}
 }
 
 async function loadRecords() {

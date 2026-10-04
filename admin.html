@@ -67,13 +67,13 @@
 
     <div id="paneU" class="card">
       <div class="row" style="margin-bottom:12px">
-        <input id="q" placeholder="搜尋帳號..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')loadUsers()">
+        <input id="q" placeholder="搜尋帳號或推薦碼..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')loadUsers()">
         <button onclick="loadUsers()">搜尋</button>
         <button class="sec" onclick="document.getElementById('q').value='';loadUsers()">全部</button>
       </div>
       <div style="overflow-x:auto"><table>
         <thead><tr><th>帳號</th><th>到期日</th><th>發訊量</th><th>狀態</th>
-        <th class="hide-m">版本</th><th class="hide-m">註冊日</th><th>操作</th></tr></thead>
+        <th class="hide-m">推薦碼</th><th class="hide-m">推薦人</th><th class="hide-m">版本</th><th class="hide-m">註冊日</th><th>操作</th></tr></thead>
         <tbody id="uRows"></tbody>
       </table></div>
     </div>
@@ -260,6 +260,8 @@ async function loadUsers() {
       '<td><span class="chip' + (expired ? ' bad' : '') + '">' + esc(u.expire_date || '—') + '</span></td>' +
       '<td>' + u.messages_sent + ' / ' + u.message_limit + '</td>' +
       '<td>' + (u.status === 'active' ? '<span class="chip">正常</span>' : '<span class="chip bad">停權</span>') + '</td>' +
+      '<td class="hide-m" style="font-family:monospace">' + esc(u.referral_code || '—') + (u.referrals ? ' <span class="chip">' + u.referrals + '人</span>' : '') + '</td>' +
+      '<td class="hide-m">' + esc(u.referred_by || '—') + '</td>' +
       '<td class="hide-m">' + esc(u.app_version || '—') + '</td>' +
       '<td class="hide-m">' + esc(u.created_at) + '</td>' +
       '<td class="row" style="min-width:270px">' +
@@ -268,9 +270,10 @@ async function loadUsers() {
         '<button class="sm sec" onclick="mdExpire(' + i + ')">改到期</button>' +
         '<button class="sm sec" onclick="mdQuota(' + i + ')">改量</button>' +
         '<button class="sm ' + (u.status === 'active' ? 'warn' : '') + '" onclick="mdStatus(' + i + ')">' + (u.status === 'active' ? '停權' : '復權') + '</button>' +
+        '<button class="sm sec" onclick="mdReferrer(' + i + ')">改推薦人</button>' +
         (ME.role === 'super' ? '<button class="sm sec" onclick="mdDevice(' + i + ')">改綁機</button>' : '') +
       '</td></tr>';
-  }).join('') || '<tr><td colspan="7" class="muted">沒有資料</td></tr>';
+  }).join('') || '<tr><td colspan="9" class="muted">沒有資料</td></tr>';
 }
 function quickDays(i, d) {
   const u = USERS[i];
@@ -306,6 +309,15 @@ function mdStatus(i) {
     toast('狀態已更新'); loadUsers();
   });
 }
+function mdReferrer(i) {
+  const u = USERS[i];
+  openModal('改「' + u.username + '」的推薦人（目前：' + (u.referred_by || '無') + '）',
+    '<div class="field"><label>推薦人的推薦碼（留空 = 解除）</label><input id="fRef" placeholder="例 ABCD2345" style="text-transform:uppercase"></div>' + noteField,
+    async () => {
+      await rpc('adm_set_referrer', { p_user_id: u.id, p_referral_code: $('fRef').value.trim().toUpperCase(), p_note: $('fNote').value });
+      toast('推薦人已更新'); loadUsers();
+    });
+}
 function mdDevice(i) {
   const u = USERS[i];
   openModal('改「' + u.username + '」綁定裝置',
@@ -318,7 +330,7 @@ function mdDevice(i) {
 
 // ---------- audit ----------
 const ACT = { set_expire: '改到期日', add_days: '續費', set_quota: '改發訊量', set_status: '改狀態',
-              set_device: '改綁機', set_admin: '管理員異動', add_version: '登記版本',
+              set_device: '改綁機', set_referrer: '改推薦人', set_admin: '管理員異動', add_version: '登記版本',
               del_version: '刪除版本', add_download: '更新下載頁' };
 async function loadAudit() {
   let rows;
