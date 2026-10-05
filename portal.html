@@ -3,59 +3,79 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SnapPost Broadcast 會員中心</title>
+<title>SnapPost Broadcast 登入</title>
+<link rel="icon" href="favicon.ico">
 <style>
   :root { --bg:#f5f6f8; --card:#fff; --line:#e3e6ea; --txt:#1c2733; --sub:#6b7a8c;
-          --pri:#2f6f4f; --pri-h:#275d42; --warn:#b4452c; --chip:#eef2f0; }
+          --pri:#1b6fe8; --pri-h:#1559c2; --warn:#b4452c; --chip:#eaf2fd; }
   * { box-sizing:border-box; margin:0; }
-  body { font-family:"Microsoft JhengHei",system-ui,sans-serif; background:var(--bg); color:var(--txt); }
-  .wrap { max-width:960px; margin:0 auto; padding:16px; }
+  body { font-family:"Noto Sans TC","Microsoft JhengHei",system-ui,sans-serif; background:var(--bg); color:var(--txt); }
+  .wrap { max-width:1100px; margin:0 auto; padding:16px; }
+  h1 { font-size:20px; } h2 { font-size:16px; margin-bottom:10px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px; }
-  input { padding:9px 11px; border:1px solid var(--line); border-radius:8px; font-size:14px; width:100%; }
-  button { padding:9px 16px; border:0; border-radius:8px; background:var(--pri); color:#fff; font-size:14px; cursor:pointer; }
+  input,select { padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:14px; background:#fff; color:var(--txt); }
+  button { padding:8px 14px; border:0; border-radius:8px; background:var(--pri); color:#fff; font-size:14px; cursor:pointer; }
   button:hover { background:var(--pri-h); } button.sec { background:#e8ebee; color:var(--txt); }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th,td { padding:7px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  button.sm { padding:4px 9px; font-size:12.5px; } button.warn { background:var(--warn); }
+  button.link { background:none; color:var(--pri); padding:0; font-weight:700; text-decoration:underline dotted; }
+  button.link:hover { background:none; color:var(--pri-h); }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th,td { padding:8px 8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:middle; }
   th { color:var(--sub); font-weight:600; white-space:nowrap; }
   .chip { background:var(--chip); border-radius:6px; padding:2px 8px; font-size:12px; display:inline-block; }
   .chip.bad { background:#f7e5e0; color:var(--warn); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .top { display:flex; justify-content:space-between; align-items:center; margin:14px 0; flex-wrap:wrap; gap:8px; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; } .tabs button { background:#e8ebee; color:var(--txt); }
+  .tabs button.on { background:var(--pri); color:#fff; }
   .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; }
   .stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
   .stat .k { color:var(--sub); font-size:12.5px; } .stat .v { font-size:22px; font-weight:700; margin-top:4px; }
+  #toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:#1c2733; color:#fff;
+           padding:10px 18px; border-radius:8px; font-size:14px; display:none; z-index:60; max-width:90vw; }
+  #modalBg { position:fixed; inset:0; background:rgba(20,28,36,.45); display:none; z-index:50; }
+  #modal { position:fixed; left:50%; top:12%; transform:translateX(-50%); width:min(420px,92vw);
+           background:#fff; border-radius:12px; padding:20px; z-index:55; display:none; max-height:80vh; overflow:auto; }
+  #modal.wide { width:min(900px,96vw); }
+  #modal h3 { font-size:16px; margin-bottom:12px; }
+  #modal .field { margin-bottom:10px; } #modal label { display:block; font-size:13px; color:var(--sub); margin-bottom:4px; }
+  #modal .field input,#modal .field select { width:100%; }
   .muted { color:var(--sub); font-size:12.5px; }
-  #login { max-width:360px; margin:12vh auto; }
-  #login input { margin-bottom:10px; }
-  .top { display:flex; justify-content:space-between; align-items:center; margin:14px 0; }
-  h1 { font-size:20px; } h2 { font-size:15px; margin-bottom:10px; }
-  a.plain { color:var(--pri); text-decoration:none; }
+  #login { max-width:380px; margin:10vh auto; }
+  #login input { width:100%; margin-bottom:10px; }
+  a.plain { color:var(--pri); text-decoration:none; font-weight:600; }
+  tr.dayrow { cursor:pointer; } tr.dayrow:hover { background:#f3f7fd; }
+  tr.detail td { background:#fafbfc; padding:0 8px 10px; }
+  .detail table { font-size:12.5px; } .detail th, .detail td { padding:5px 6px; }
+  @media (max-width:700px){ .hide-m { display:none; } }
 </style>
 </head>
 <body>
 <div class="wrap">
 
+  <!-- ===== 統一登入 ===== -->
   <div id="login" class="card">
-    <h1 style="margin-bottom:6px">會員中心</h1>
-    <p class="muted" style="margin-bottom:14px">使用 SnapPost 軟體內註冊的帳號密碼登入</p>
-    <input id="liUser" placeholder="帳號" autocomplete="username">
+    <h1 style="margin-bottom:6px">SnapPost Broadcast 登入</h1>
+    <p class="muted" style="margin-bottom:14px">會員請用軟體內註冊的帳號密碼；管理員請用 Email 登入</p>
+    <input id="liUser" placeholder="帳號或 Email" autocomplete="username">
     <input id="liPw" type="password" placeholder="密碼" autocomplete="current-password">
     <button style="width:100%" onclick="doLogin()">登入</button>
     <p id="liMsg" class="muted" style="margin-top:10px"></p>
-    <p class="muted" style="margin-top:14px"><a class="plain" href="index.html">← 回下載頁</a>　<a class="plain" href="admin.html">管理員請由管理後台登入 →</a></p>
+    <p class="muted" style="margin-top:14px"><a class="plain" href="index.html">← 回官網</a></p>
   </div>
 
-  <div id="app" style="display:none">
+  <!-- ===== 會員中心 ===== -->
+  <div id="cust" style="display:none">
     <div class="top">
       <h1>會員中心 — <span id="uname"></span></h1>
-      <div><button class="sec" onclick="refresh()">重新整理</button>
-      <button class="sec" onclick="location.reload()">登出</button></div>
+      <div class="row"><button class="sec" onclick="custRefresh()">重新整理</button><button class="sec" onclick="logoutAll()">登出</button></div>
     </div>
     <div class="grid" style="margin-bottom:14px">
       <div class="stat"><div class="k">方案狀態</div><div class="v" id="sStatus">—</div></div>
       <div class="stat"><div class="k">有效期限</div><div class="v" id="sExpire">—</div></div>
       <div class="stat"><div class="k">剩餘可發訊息</div><div class="v" id="sRemain">—</div></div>
       <div class="stat"><div class="k">已發送 / 上限</div><div class="v" id="sUsage">—</div></div>
-      <div class="stat"><div class="k">我的推薦碼</div><div class="v" id="sCode" style="font-family:monospace;letter-spacing:2px">—</div>
-        <div class="muted" id="sRefBy"></div></div>
+      <div class="stat"><div class="k">我的推薦碼</div><div class="v" id="sCode" style="font-family:monospace;letter-spacing:2px">—</div><div class="muted" id="sRefBy"></div></div>
       <div class="stat"><div class="k">已推薦人數</div><div class="v" id="sRefs">—</div></div>
     </div>
     <div class="card" id="refCard" style="display:none">
@@ -70,68 +90,188 @@
       </table></div>
     </div>
   </div>
+
+  <!-- ===== 管理後台 ===== -->
+  <div id="adm" style="display:none">
+    <div class="top">
+      <h1>管理後台</h1>
+      <div class="row"><span class="chip" id="meChip"></span><button class="sec sm" onclick="logoutAll()">登出</button></div>
+    </div>
+    <div class="tabs" style="margin-bottom:14px">
+      <button id="tabU" class="on" onclick="showTab('U')">會員管理</button>
+      <button id="tabA" onclick="showTab('A')">操作紀錄</button>
+      <button id="tabS" onclick="showTab('S')" style="display:none">試用設定</button>
+      <button id="tabV" onclick="showTab('V')" style="display:none">版本管理</button>
+      <button id="tabM" onclick="showTab('M')" style="display:none">管理員</button>
+    </div>
+
+    <div id="paneU" class="card">
+      <div class="row" style="margin-bottom:12px">
+        <input id="q" placeholder="搜尋帳號或推薦碼..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')loadUsers()">
+        <button onclick="loadUsers()">搜尋</button>
+        <button class="sec" onclick="document.getElementById('q').value='';loadUsers()">全部</button>
+      </div>
+      <p class="muted" style="margin-bottom:8px">點「發訊量」數字可看該會員的每日發送紀錄。</p>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>帳號</th><th>到期日</th><th>發訊量</th><th>狀態</th>
+        <th class="hide-m">推薦碼</th><th class="hide-m">推薦人</th><th class="hide-m">版本</th><th class="hide-m">註冊日</th><th>操作</th></tr></thead>
+        <tbody id="uRows"></tbody>
+      </table></div>
+    </div>
+
+    <div id="paneA" class="card" style="display:none">
+      <div class="row" style="margin-bottom:12px">
+        <select id="aFilter" style="display:none" onchange="loadAudit()"></select>
+        <button class="sec" onclick="loadAudit()">重新整理</button>
+      </div>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>時間</th><th>管理員</th><th>動作</th><th>對象</th><th>內容</th><th class="hide-m">備註</th></tr></thead>
+        <tbody id="aRows"></tbody>
+      </table></div>
+    </div>
+
+    <div id="paneS" class="card" style="display:none">
+      <h2>新註冊使用者的試用設定</h2>
+      <p class="muted" style="margin-bottom:14px">只影響之後註冊的新帳號；既有會員請到會員管理個別調整。每次修改都會記進操作紀錄。</p>
+      <div class="row" style="margin-bottom:10px">
+        <label>試用天數 <input id="stTrial" type="number" min="1" max="3650" style="width:110px"></label>
+        <label>發訊量上限 <input id="stLimit" type="number" min="1" style="width:140px"></label>
+        <input id="stNote" placeholder="備註（選填）" style="min-width:200px">
+        <button id="stSave" onclick="saveSettings()">儲存</button>
+      </div>
+      <p class="muted" id="stCur"></p>
+    </div>
+
+    <div id="paneV" class="card" style="display:none">
+      <h2>登記新版本（寫入後所有 Supabase 版客戶端會自動更新）</h2>
+      <div class="row" style="margin-bottom:8px">
+        <input id="vVer" placeholder="版本號 例 1.5.45" style="width:140px">
+        <input id="vUrl" placeholder="更新 zip 網址（GitHub Release）" style="flex:1;min-width:260px">
+      </div>
+      <div class="row" style="margin-bottom:16px">
+        <input id="vNotes" placeholder="更新說明" style="flex:1;min-width:200px">
+        <label class="muted"><input type="checkbox" id="vForce"> 強制更新</label>
+        <button onclick="addVersion()">登記版本</button>
+      </div>
+      <h2>更新下載頁（官網顯示的安裝檔）</h2>
+      <div class="row" style="margin-bottom:16px">
+        <input id="dVer" placeholder="版本號" style="width:140px">
+        <input id="dUrl" placeholder="安裝檔 setup.exe 網址" style="flex:1;min-width:260px">
+        <input id="dNotes" placeholder="說明" style="min-width:160px">
+        <button onclick="addDownload()">更新下載頁</button>
+      </div>
+      <h2>版本歷史</h2>
+      <div style="overflow-x:auto"><table>
+        <thead><tr><th>版本</th><th>發布時間</th><th>強制</th><th>說明</th><th>操作</th></tr></thead>
+        <tbody id="vRows"></tbody>
+      </table></div>
+    </div>
+
+    <div id="paneM" class="card" style="display:none">
+      <p class="muted" style="margin-bottom:10px">新增業務前，先到 Supabase Studio &gt; Authentication &gt; Add user 建立登入帳號（勾 Auto Confirm），再在這裡指定角色。</p>
+      <div class="row" style="margin-bottom:14px">
+        <input id="mEmail" type="email" placeholder="email" style="min-width:200px">
+        <input id="mName" placeholder="顯示名稱">
+        <select id="mRole"><option value="agent">業務</option><option value="super">超級管理員</option></select>
+        <select id="mActive"><option value="true">啟用</option><option value="false">停用</option></select>
+        <button onclick="saveAdmin()">儲存</button>
+      </div>
+      <p class="muted" style="margin-bottom:8px">權限開關即時生效。「會員管理」= 調到期日/發訊量/停權/推薦人；「試用設定」= 改新註冊的試用天數與發訊量；「版本管理」= 程式版本與下載頁。超級管理員永遠全開。</p>
+      <div style="overflow-x:auto"><table><thead><tr><th>Email</th><th>名稱</th><th>角色</th><th>狀態</th><th>會員管理</th><th>試用設定</th><th>版本管理</th><th>建立日</th></tr></thead>
+      <tbody id="mRows"></tbody></table></div>
+    </div>
+  </div>
 </div>
+
+<div id="modalBg" onclick="closeModal()"></div>
+<div id="modal">
+  <h3 id="mdTitle"></h3>
+  <div id="mdBody"></div>
+  <div class="row" style="justify-content:flex-end;margin-top:14px">
+    <button class="sec" onclick="closeModal()">關閉</button>
+    <button id="mdOk">確定</button>
+  </div>
+</div>
+<div id="toast"></div>
 
 <script>
 const SUPABASE_URL = "https://xsagokraqdmcmbjvctwy.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzYWdva3JhcWRtY21ianZjdHd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwMzg4OTksImV4cCI6MjEwNjYxNDg5OX0.MEaRqWq7EREH0LPklw-3ERRwvcA2PMuhjpyH5lQUVMw";
-let CRED = null; // 僅存在記憶體，重新整理即登出
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-async function rpc(fn, args) {
-  const r = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
-    method: 'POST',
-    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-               'Content-Type': 'application/json' },
-    body: JSON.stringify(args || {})
-  });
-  if (!r.ok) {
-    let m = ''; try { m = (await r.json()).message || ''; } catch (e) {}
-    if (m.includes('bad_credentials')) throw new Error('帳號或密碼錯誤');
-    if (m.includes('password_reset_required')) throw new Error('此帳號需重設密碼，請聯絡客服');
-    throw new Error(m || '連線失敗');
-  }
-  return r.json();
+function toast(msg, bad) {
+  const t = $('toast'); t.textContent = msg; t.style.background = bad ? '#b4452c' : '#1c2733';
+  t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', 2600);
 }
+function show(view) {
+  for (const v of ['login', 'cust', 'adm']) $(v).style.display = v === view ? 'block' : 'none';
+}
+async function postRpc(fn, args, token) {
+  return fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
+    method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + (token || SUPABASE_ANON_KEY), 'Content-Type': 'application/json' },
+    body: JSON.stringify(args || {}) });
+}
+function friendly(m) {
+  if (!m) return '操作失敗';
+  if (m.indexOf('bad_credentials') >= 0) return '帳號或密碼錯誤';
+  if (m.indexOf('password_reset_required') >= 0) return '此帳號需重設密碼，請聯絡客服';
+  if (m.indexOf('no_permission') >= 0) return '你沒有這項操作的權限，請聯絡超級管理員';
+  if (m.indexOf('not_admin') >= 0) return '此帳號沒有管理權限';
+  if (m.indexOf('auth_user_not_found') >= 0) return '找不到這個 email 的登入帳號，請先在 Supabase Studio 建立';
+  if (m.indexOf('bad_referral_code') >= 0) return '推薦碼不存在';
+  if (m.indexOf('cannot_refer_self') >= 0) return '不能推薦自己';
+  if (m.indexOf('device_already_bound') >= 0) return '這個裝置已綁定其他帳號';
+  return m;
+}
+
+// ================= 登入 =================
+let CRED = null;
+let AUTH = null, ME = null;
+try { AUTH = JSON.parse(localStorage.getItem('sp_admin_auth') || 'null'); } catch (e) {}
+function saveAuth(a) { AUTH = a; try { a ? localStorage.setItem('sp_admin_auth', JSON.stringify(a)) : localStorage.removeItem('sp_admin_auth'); } catch (e) {} }
 
 async function doLogin() {
+  const id = $('liUser').value.trim(), pw = $('liPw').value;
+  if (!id || !pw) { $('liMsg').textContent = '請輸入帳號與密碼'; return; }
   $('liMsg').textContent = '登入中...';
-  const cred = { p_username: $('liUser').value.trim(), p_password: $('liPw').value };
   try {
-    const me = await rpc('sp_portal_me', cred);
-    CRED = cred;
-    show(me);
-    loadRecords();
-  } catch (e) { $('liMsg').textContent = e.message; }
+    if (id.indexOf('@') >= 0) await adminLogin(id, pw); else await custLogin(id, pw);
+    $('liMsg').textContent = '';
+  } catch (e) { $('liMsg').textContent = '登入失敗：' + friendly(e.message); }
 }
+function logoutAll() { CRED = null; saveAuth(null); location.reload(); }
 
-function show(me) {
-  $('login').style.display = 'none'; $('app').style.display = 'block';
+// ================= 會員 =================
+async function crpc(fn, args) {
+  const r = await postRpc(fn, args);
+  if (!r.ok) { let m = ''; try { m = (await r.json()).message || ''; } catch (e) {} throw new Error(m || '連線失敗'); }
+  return r.json();
+}
+async function custLogin(u, p) {
+  const cred = { p_username: u, p_password: p };
+  const me = await crpc('sp_portal_me', cred);
+  CRED = cred; custShow(me); loadRecords();
+}
+function custShow(me) {
+  show('cust');
   $('uname').textContent = me.username;
   const expired = me.expire_date && me.expire_date < new Date().toISOString().slice(0, 10);
-  $('sStatus').innerHTML = me.status !== 'active' ? '<span class="chip bad">停權</span>'
-      : (expired ? '<span class="chip bad">已到期</span>' : '<span class="chip">使用中</span>');
+  $('sStatus').innerHTML = me.status !== 'active' ? '<span class="chip bad">停權</span>' : (expired ? '<span class="chip bad">已到期</span>' : '<span class="chip">使用中</span>');
   $('sExpire').textContent = me.expire_date || '—';
-  $('sRemain').textContent = me.remaining.toLocaleString();
-  $('sUsage').textContent = me.messages_sent.toLocaleString() + ' / ' + me.message_limit.toLocaleString();
+  $('sRemain').textContent = (me.remaining || 0).toLocaleString();
+  $('sUsage').textContent = (me.messages_sent || 0).toLocaleString() + ' / ' + (me.message_limit || 0).toLocaleString();
   $('sCode').textContent = me.referral_code || '—';
   $('sRefBy').textContent = me.referred_by ? '推薦人：' + me.referred_by : '';
   $('sRefs').textContent = (me.referrals || 0).toLocaleString();
   loadReferrals(me.referrals || 0);
 }
-
-async function refresh() {
-  if (!CRED) return;
-  try { show(await rpc('sp_portal_me', CRED)); loadRecords(); } catch (e) {}
-}
-
+async function custRefresh() { if (!CRED) return; try { custShow(await crpc('sp_portal_me', CRED)); loadRecords(); } catch (e) {} }
 async function loadReferrals(n) {
   if (!n) { $('refCard').style.display = 'none'; return; }
   try {
-    const rows = await rpc('sp_portal_referrals', CRED);
-    const today = new Date().toISOString().slice(0, 10);
+    const rows = await crpc('sp_portal_referrals', CRED); const today = new Date().toISOString().slice(0, 10);
     $('refRows').innerHTML = rows.map(r => '<tr><td>' + esc(r.username) + '</td><td>' + esc(r.created_at) + '</td>' +
       '<td><span class="chip' + (r.expire_date && r.expire_date < today ? ' bad' : '') + '">' + esc(r.expire_date || '—') + '</span></td>' +
       '<td>' + (r.messages_sent || 0).toLocaleString() + ' / ' + (r.message_limit || 0).toLocaleString() + '</td><td>' +
@@ -139,24 +279,235 @@ async function loadReferrals(n) {
     $('refCard').style.display = 'block';
   } catch (e) {}
 }
-
 async function loadRecords() {
   try {
-    const rows = await rpc('sp_portal_records', { ...CRED, p_limit: 200 });
+    const rows = await crpc('sp_portal_records', Object.assign({}, CRED, { p_limit: 200 }));
     $('rRows').innerHTML = rows.map(r =>
       '<tr><td style="white-space:nowrap">' + esc(r.start_time || '') + '</td>' +
-      '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
-        esc((r.fanpage_url || '').replace('https://www.facebook.com/', '')) + '</td>' +
+      '<td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc((r.fanpage_url || '').replace('https://www.facebook.com/', '')) + '</td>' +
       '<td>' + r.total_attempted + '</td><td>' + r.success_count + '</td><td>' + r.fail_count + '</td>' +
       '<td>' + (r.status === 'completed' ? '<span class="chip">完成</span>' : '<span class="chip bad">' + esc(r.status) + '</span>') + '</td>' +
       '<td class="muted" style="max-width:260px">' + esc((r.error_summary || '').slice(0, 120)) + '</td></tr>'
     ).join('') || '<tr><td colspan="7" class="muted">還沒有發送紀錄</td></tr>';
-  } catch (e) {
-    $('rRows').innerHTML = '<tr><td colspan="7" class="muted">' + esc(e.message) + '</td></tr>';
-  }
+  } catch (e) { $('rRows').innerHTML = '<tr><td colspan="7" class="muted">' + esc(e.message) + '</td></tr>'; }
 }
 
+// ================= 管理員 =================
+async function refreshToken() {
+  if (!AUTH || !AUTH.refresh_token) return false;
+  try {
+    const r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=refresh_token', { method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ refresh_token: AUTH.refresh_token }) });
+    if (!r.ok) return false;
+    const j = await r.json(); saveAuth({ access_token: j.access_token, refresh_token: j.refresh_token }); return true;
+  } catch (e) { return false; }
+}
+async function rpc(fn, args, _retry) {
+  if (!AUTH) throw new Error('請先登入');
+  const r = await postRpc(fn, args, AUTH.access_token);
+  if (r.status === 401 && !_retry && await refreshToken()) return rpc(fn, args, true);
+  if (!r.ok) { let m = ''; try { m = (await r.json()).message || ''; } catch (e) {} if (r.status === 401) saveAuth(null); throw new Error(friendly(m || ('操作失敗(' + r.status + ')'))); }
+  const t = await r.text(); return (t && t !== 'null') ? JSON.parse(t) : null;
+}
+async function adminLogin(email, pw) {
+  const r = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', { method: 'POST',
+    headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: pw }) });
+  const j = await r.json();
+  if (!r.ok) { const m = j.error_description || j.msg || j.error || ''; throw new Error(m.indexOf('Invalid login') >= 0 ? 'bad_credentials' : (m || 'bad_credentials')); }
+  saveAuth({ access_token: j.access_token, refresh_token: j.refresh_token });
+  await adminBoot();
+}
+async function adminBoot() {
+  try { ME = await rpc('adm_me'); } catch (e) { ME = null; }
+  if (!ME) { saveAuth(null); throw new Error('not_admin'); }
+  ME.perms = ME.perms || {};
+  show('adm');
+  $('meChip').textContent = (ME.display_name || ME.email) + '（' + (ME.role === 'super' ? '超級管理員' : '業務') + '）';
+  $('tabM').style.display = ME.role === 'super' ? '' : 'none';
+  $('tabV').style.display = canDo('versions') ? '' : 'none';
+  $('tabS').style.display = canDo('settings') ? '' : 'none';
+  loadUsers();
+}
+function canDo(k) { return !!ME && (ME.role === 'super' || !!ME.perms[k]); }
+
+function showTab(t) {
+  for (const k of ['U', 'A', 'S', 'V', 'M']) { $('pane' + k).style.display = k === t ? 'block' : 'none'; $('tab' + k).classList.toggle('on', k === t); }
+  if (t === 'A') loadAudit(); if (t === 'M') loadAdmins(); if (t === 'V') loadVersions(); if (t === 'S') loadSettings();
+}
+
+// ---- modal ----
+let mdSubmit = null;
+function openModal(title, bodyHtml, onOk, wide) {
+  $('mdTitle').textContent = title; $('mdBody').innerHTML = bodyHtml; mdSubmit = onOk;
+  $('modal').classList.toggle('wide', !!wide); $('mdOk').style.display = onOk ? '' : 'none';
+  $('modalBg').style.display = 'block'; $('modal').style.display = 'block';
+  const f = $('mdBody').querySelector('input,select'); if (f) f.focus();
+}
+function closeModal() { $('modalBg').style.display = 'none'; $('modal').style.display = 'none'; mdSubmit = null; }
+$('mdOk').onclick = async () => { if (!mdSubmit) return; try { await mdSubmit(); closeModal(); } catch (e) { toast(e.message, true); } };
+const noteField = '<div class="field"><label>備註（選填，會記進稽核）</label><input id="fNote" placeholder="例：客戶續約 3 個月"></div>';
+
+// ---- users ----
+let USERS = [];
+async function loadUsers() {
+  try { USERS = await rpc('adm_list_users', { p_search: $('q').value.trim() || null }); } catch (e) { toast(e.message, true); return; }
+  const today = new Date().toISOString().slice(0, 10);
+  $('uRows').innerHTML = (USERS || []).map((u, i) => {
+    const expired = u.expire_date && u.expire_date < today;
+    return '<tr>' +
+      '<td><b>' + esc(u.username) + '</b>' + (u.device_bound ? '' : ' <span class="chip">未綁機</span>') + '</td>' +
+      '<td><span class="chip' + (expired ? ' bad' : '') + '">' + esc(u.expire_date || '—') + '</span></td>' +
+      '<td><button class="link" onclick="openDaily(' + i + ')" title="看每日紀錄">' + u.messages_sent + ' / ' + u.message_limit + '</button></td>' +
+      '<td>' + (u.status === 'active' ? '<span class="chip">正常</span>' : '<span class="chip bad">停權</span>') + '</td>' +
+      '<td class="hide-m" style="font-family:monospace">' + esc(u.referral_code || '—') + (u.referrals ? ' <span class="chip">' + u.referrals + '人</span>' : '') + '</td>' +
+      '<td class="hide-m">' + esc(u.referred_by || '—') + '</td>' +
+      '<td class="hide-m">' + esc(u.app_version || '—') + '</td>' +
+      '<td class="hide-m">' + esc(u.created_at) + '</td>' +
+      '<td class="row" style="min-width:270px">' + (!canDo('users') ? '<span class="muted">唯讀</span>' : (
+        '<button class="sm" onclick="quickDays(' + i + ',30)">+30天</button>' +
+        '<button class="sm" onclick="quickDays(' + i + ',90)">+90天</button>' +
+        '<button class="sm sec" onclick="mdExpire(' + i + ')">改到期</button>' +
+        '<button class="sm sec" onclick="mdQuota(' + i + ')">改量</button>' +
+        '<button class="sm ' + (u.status === 'active' ? 'warn' : '') + '" onclick="mdStatus(' + i + ')">' + (u.status === 'active' ? '停權' : '復權') + '</button>' +
+        '<button class="sm sec" onclick="mdReferrer(' + i + ')">改推薦人</button>' +
+        (ME.role === 'super' ? '<button class="sm sec" onclick="mdDevice(' + i + ')">改綁機</button>' : ''))) +
+      '</td></tr>';
+  }).join('') || '<tr><td colspan="9" class="muted">沒有資料</td></tr>';
+}
+function quickDays(i, d) { const u = USERS[i];
+  openModal('幫「' + u.username + '」延長 ' + d + ' 天', noteField, async () => { await rpc('adm_add_days', { p_user_id: u.id, p_days: d, p_note: $('fNote').value }); toast('已延長 ' + d + ' 天'); loadUsers(); }); }
+function mdExpire(i) { const u = USERS[i];
+  openModal('改「' + u.username + '」到期日', '<div class="field"><label>新到期日</label><input id="fDate" type="date" value="' + esc(u.expire_date || '') + '"></div>' + noteField,
+    async () => { if (!$('fDate').value) throw new Error('請選日期'); await rpc('adm_set_expire', { p_user_id: u.id, p_expire: $('fDate').value, p_note: $('fNote').value }); toast('到期日已更新'); loadUsers(); }); }
+function mdQuota(i) { const u = USERS[i];
+  openModal('改「' + u.username + '」發訊量上限', '<div class="field"><label>新上限（目前 ' + u.message_limit + '，已用 ' + u.messages_sent + '）</label><input id="fLim" type="number" min="0" value="' + u.message_limit + '"></div>' + noteField,
+    async () => { await rpc('adm_set_quota', { p_user_id: u.id, p_limit: parseInt($('fLim').value, 10), p_note: $('fNote').value }); toast('發訊量已更新'); loadUsers(); }); }
+function mdStatus(i) { const u = USERS[i]; const to = u.status === 'active' ? 'suspended' : 'active';
+  openModal((to === 'suspended' ? '停權' : '復權') + '「' + u.username + '」', noteField, async () => { await rpc('adm_set_status', { p_user_id: u.id, p_status: to, p_note: $('fNote').value }); toast('狀態已更新'); loadUsers(); }); }
+function mdReferrer(i) { const u = USERS[i];
+  openModal('改「' + u.username + '」的推薦人（目前：' + (u.referred_by || '無') + '）', '<div class="field"><label>推薦人的推薦碼（留空 = 解除）</label><input id="fRef" placeholder="例 ABCD2345" style="text-transform:uppercase"></div>' + noteField,
+    async () => { await rpc('adm_set_referrer', { p_user_id: u.id, p_referral_code: $('fRef').value.trim().toUpperCase(), p_note: $('fNote').value }); toast('推薦人已更新'); loadUsers(); }); }
+function mdDevice(i) { const u = USERS[i];
+  openModal('改「' + u.username + '」綁定裝置', '<div class="field"><label>新 device_id（留空 = 解除綁定）</label><input id="fDev" placeholder="客戶新機器的 device id"></div>' + noteField,
+    async () => { await rpc('adm_set_device', { p_user_id: u.id, p_device_id: $('fDev').value.trim(), p_note: $('fNote').value }); toast('裝置已更新'); loadUsers(); }); }
+
+// ---- 每日紀錄 modal ----
+async function openDaily(i) {
+  const u = USERS[i];
+  openModal('「' + u.username + '」每日發送紀錄（近 90 天）', '<div class="muted">載入中...</div>', null, true);
+  let d;
+  try { d = await rpc('adm_user_daily', { p_username: u.username, p_days: 90 }); } catch (e) { $('mdBody').innerHTML = '<div class="muted">' + esc(e.message) + '</div>'; return; }
+  const byDay = {}; (d.records || []).forEach(r => { (byDay[r.day] = byDay[r.day] || []).push(r); });
+  if (!(d.daily || []).length) { $('mdBody').innerHTML = '<div class="muted">近 90 天沒有發送紀錄</div>'; return; }
+  const tot = d.daily.reduce((a, x) => ({ t: a.t + x.tasks, at: a.at + (x.attempted || 0), s: a.s + (x.success || 0), f: a.f + (x.fail || 0) }), { t: 0, at: 0, s: 0, f: 0 });
+  let html = '<p class="muted" style="margin-bottom:8px">合計 ' + tot.t + ' 個任務、嘗試 ' + tot.at.toLocaleString() + '、成功 ' + tot.s.toLocaleString() + '、失敗 ' + tot.f.toLocaleString() + '。點日期展開當天任務。</p>' +
+    '<div style="overflow-x:auto"><table><thead><tr><th>日期</th><th>任務數</th><th>嘗試</th><th>成功</th><th>失敗</th></tr></thead><tbody>';
+  d.daily.forEach((x, k) => {
+    html += '<tr class="dayrow" onclick="toggleDay(' + k + ')"><td><b>' + esc(x.day) + '</b></td><td>' + x.tasks + '</td><td>' + (x.attempted || 0) + '</td><td>' + (x.success || 0) + '</td><td>' + ((x.fail || 0) ? '<span class="chip bad">' + x.fail + '</span>' : '0') + '</td></tr>';
+    const rs = byDay[x.day] || [];
+    html += '<tr class="detail" id="day' + k + '" style="display:none"><td colspan="5"><table><thead><tr><th>時間</th><th>帳號</th><th>粉專</th><th>素材</th><th>嘗試</th><th>成功</th><th>失敗</th><th>狀態</th><th>錯誤摘要</th></tr></thead><tbody>' +
+      rs.map(r => '<tr><td style="white-space:nowrap">' + esc(r.start_time || '') + (r.end_time ? '–' + esc(r.end_time) : '') + '</td><td>' + esc(r.account_id) + '</td>' +
+        '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc((r.fanpage_url || '').replace('https://www.facebook.com/', '')) + '</td>' +
+        '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(r.content_files || '') + '</td>' +
+        '<td>' + r.total_attempted + '</td><td>' + r.success_count + '</td><td>' + r.fail_count + '</td>' +
+        '<td>' + (r.status === 'completed' ? '<span class="chip">完成</span>' : '<span class="chip bad">' + esc(r.status) + '</span>') + '</td>' +
+        '<td class="muted" style="max-width:220px">' + esc((r.error_summary || '').slice(0, 100)) + '</td></tr>').join('') +
+      '</tbody></table></td></tr>';
+  });
+  $('mdBody').innerHTML = html + '</tbody></table></div>';
+}
+function toggleDay(k) { const el = $('day' + k); el.style.display = el.style.display === 'none' ? '' : 'none'; }
+
+// ---- audit ----
+const ACT = { set_expire: '改到期日', add_days: '續費', set_quota: '改發訊量', set_status: '改狀態', set_device: '改綁機', set_referrer: '改推薦人',
+              set_admin: '管理員異動', add_version: '登記版本', del_version: '刪除版本', add_download: '更新下載頁', set_setting: '改試用設定' };
+async function loadAudit() {
+  let rows; try { rows = await rpc('adm_list_audit', { p_limit: 300, p_admin_email: ($('aFilter').value || null) }); } catch (e) { toast(e.message, true); return; }
+  if (ME.role === 'super') { const sel = $('aFilter'); sel.style.display = '';
+    if (!sel.options.length) { const emails = []; (rows || []).forEach(r => { if (emails.indexOf(r.admin_email) < 0) emails.push(r.admin_email); });
+      sel.innerHTML = '<option value="">全部管理員</option>' + emails.map(e => '<option>' + esc(e) + '</option>').join(''); } }
+  $('aRows').innerHTML = (rows || []).map(r =>
+    '<tr><td style="white-space:nowrap">' + esc(r.created_at) + '</td><td>' + esc(r.admin_email) + '</td>' +
+    '<td><span class="chip">' + esc(ACT[r.action] || r.action) + '</span></td><td>' + esc(r.target_username) + '</td>' +
+    '<td>' + esc(r.old_value) + ' → <b>' + esc(r.new_value) + '</b></td><td class="hide-m">' + esc(r.note) + '</td></tr>'
+  ).join('') || '<tr><td colspan="6" class="muted">沒有紀錄</td></tr>';
+}
+
+// ---- settings ----
+let SETTINGS = {};
+async function loadSettings() {
+  try { SETTINGS = await rpc('adm_get_settings'); } catch (e) { toast(e.message, true); return; }
+  const tv = (SETTINGS.trial_days || {}).value, lv = (SETTINGS.message_limit || {}).value;
+  $('stTrial').value = tv == null ? '' : tv; $('stLimit').value = lv == null ? '' : lv;
+  $('stCur').textContent = '目前：新註冊試用 ' + (tv == null ? '—' : tv) + ' 天、發訊量上限 ' + (lv == null ? '—' : (+lv).toLocaleString()) + ' 則';
+}
+async function saveSettings() {
+  const t = parseInt($('stTrial').value, 10), l = parseInt($('stLimit').value, 10), note = $('stNote').value;
+  if (!(t >= 1) || !(l >= 1)) { toast('請輸入有效數字', true); return; }
+  try {
+    if (t !== +((SETTINGS.trial_days || {}).value)) await rpc('adm_set_setting', { p_key: 'trial_days', p_value: t, p_note: note });
+    if (l !== +((SETTINGS.message_limit || {}).value)) await rpc('adm_set_setting', { p_key: 'message_limit', p_value: l, p_note: note });
+    toast('試用設定已更新'); $('stNote').value = ''; loadSettings();
+  } catch (e) { toast(e.message, true); }
+}
+
+// ---- admins (super) ----
+let ADMINS = [];
+async function loadAdmins() {
+  let rows; try { rows = await rpc('adm_list_admins'); } catch (e) { toast(e.message, true); return; }
+  ADMINS = rows || [];
+  $('mRows').innerHTML = ADMINS.map((a, i) => {
+    const pm = a.perms || {};
+    const cb = (k, on) => a.role === 'super' ? '<span class="chip">全開</span>'
+      : '<input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="setPerm(' + i + ',' + JSON.stringify(k).replace(/"/g, '&quot;') + ',this.checked)">';
+    return '<tr><td>' + esc(a.email) + '</td><td>' + esc(a.display_name) + '</td><td>' + (a.role === 'super' ? '超級管理員' : '業務') + '</td>' +
+      '<td>' + (a.active ? '<span class="chip">啟用</span>' : '<span class="chip bad">停用</span>') + '</td>' +
+      '<td>' + cb('users', pm.users !== false) + '</td><td>' + cb('settings', pm.settings === true) + '</td><td>' + cb('versions', pm.versions === true) + '</td>' +
+      '<td>' + esc(a.created_at) + '</td></tr>';
+  }).join('');
+}
+async function setPerm(i, key, on) {
+  const a = ADMINS[i]; const perms = Object.assign({ users: true, versions: false, settings: false }, a.perms || {}); perms[key] = on;
+  try { await rpc('adm_set_admin', { p_email: a.email, p_role: a.role, p_active: a.active, p_display_name: null, p_perms: perms }); toast('權限已更新'); }
+  catch (e) { toast(e.message, true); }
+  loadAdmins();
+}
+async function saveAdmin() {
+  try {
+    await rpc('adm_set_admin', { p_email: $('mEmail').value.trim(), p_role: $('mRole').value, p_active: $('mActive').value === 'true',
+      p_display_name: $('mName').value.trim() || null, p_perms: { users: true, versions: false, settings: false } });
+    toast('已儲存'); $('mEmail').value = ''; $('mName').value = ''; loadAdmins();
+  } catch (e) { toast(e.message, true); }
+}
+
+// ---- versions ----
+async function loadVersions() {
+  let rows; try { rows = await rpc('adm_list_versions'); } catch (e) { toast(e.message, true); return; }
+  $('vRows').innerHTML = (rows || []).map(v =>
+    '<tr><td><b>v' + esc(v.version) + '</b></td><td style="white-space:nowrap">' + esc(v.released_at) + '</td>' +
+    '<td>' + (v.force_update ? '<span class="chip bad">強制</span>' : '') + '</td>' +
+    '<td class="muted" style="max-width:300px">' + esc((v.release_notes || '').slice(0, 100)) + '</td>' +
+    '<td><button class="sm warn" onclick="delVersion(' + JSON.stringify(v.version).replace(/"/g, '&quot;') + ')">刪除</button></td></tr>'
+  ).join('') || '<tr><td colspan="5" class="muted">沒有版本</td></tr>';
+}
+async function addVersion() {
+  try { await rpc('adm_add_version', { p_version: $('vVer').value.trim(), p_download_url: $('vUrl').value.trim(), p_notes: $('vNotes').value.trim(), p_force: $('vForce').checked });
+    toast('版本已登記，客戶端將自動更新'); loadVersions(); } catch (e) { toast(e.message, true); }
+}
+async function delVersion(ver) {
+  openModal('刪除版本 v' + ver + '？（客戶端將不再看到此版本）', '', async () => { await rpc('adm_del_version', { p_version: ver }); toast('已刪除'); loadVersions(); });
+}
+async function addDownload() {
+  try { await rpc('adm_add_download', { p_version: $('dVer').value.trim(), p_download_url: $('dUrl').value.trim(), p_notes: $('dNotes').value.trim() }); toast('下載頁已更新'); }
+  catch (e) { toast(e.message, true); }
+}
+
+// ================= boot =================
 $('liPw').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+(async () => {
+  if (AUTH) { try { await adminBoot(); return; } catch (e) { saveAuth(null); } }
+  show('login');
+})();
 </script>
 </body>
 </html>
