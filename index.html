@@ -70,6 +70,12 @@
   .pain .card { border-top:4px solid var(--blue); }
   .pain .card .q { font-size:13px; color:var(--ink-3); margin-bottom:6px; }
 
+  .shots { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .shot { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .shot img { display:block; width:100%; height:auto; border-bottom:1px solid var(--line); }
+  .shot figcaption { padding:14px 16px; font-size:14px; color:var(--ink-2); }
+  .shot figcaption b { display:block; color:var(--ink); font-size:15px; margin-bottom:4px; }
+  .shot.wide { grid-column:1 / -1; }
   .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
   .who .card { text-align:left; }
   .who .card .ico { background:linear-gradient(135deg,#e8f1fd,#dbe9fb); }
@@ -113,7 +119,7 @@
   @media (max-width:900px) {
     .hero .wrap { grid-template-columns:1fr; } .hero { padding:44px 0 36px; }
     .hero h1, .hero .h1b { font-size:30px; }
-    .grid3, .steps { grid-template-columns:1fr; } .grid4 { grid-template-columns:1fr 1fr; } .dl-cols { grid-template-columns:1fr; }
+    .grid3, .steps, .shots { grid-template-columns:1fr; } .grid4 { grid-template-columns:1fr 1fr; } .dl-cols { grid-template-columns:1fr; }
     .navlinks { display:none; position:absolute; top:66px; left:0; right:0; background:#fff; border-bottom:1px solid var(--line); flex-direction:column; padding:10px 16px 16px; }
     .navlinks.open { display:flex; } .burger { display:block; } .nav-cta { margin-left:0; }
     .band { padding:32px 24px; } section { padding:52px 0; }
@@ -291,6 +297,22 @@
       <div class="step"><div class="n">3</div>
         <svg viewBox="0 0 300 130" fill="none"><rect x="60" y="20" width="180" height="90" rx="12" fill="#eaf2fd"/><rect x="80" y="36" width="140" height="14" rx="7" fill="#fff" stroke="#9cc0f4"/><rect x="80" y="58" width="140" height="14" rx="7" fill="#fff" stroke="#9cc0f4"/><rect x="80" y="80" width="90" height="14" rx="7" fill="#fff" stroke="#9cc0f4"/><circle cx="200" cy="87" r="16" fill="#1f9d55"/><path d="M193 87l5 5 9-10" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <h3>選粉專、按開始</h3><p>選擇目標粉專，設定間隔或每週排程，按下開始，之後交給它。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="shots">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="kicker">產品畫面</div>
+      <h2>真實介面、真實運行</h2>
+      <p>以下為軟體實際畫面與真機發送測試的截圖（客戶資料已模糊處理）。</p>
+    </div>
+    <div class="shots">
+      <figure class="shot"><img src="img/ui_dashboard.jpg" alt="主頁儀表板" loading="lazy"><figcaption><b>主頁儀表板</b>帳號狀態、到期日、剩餘訊息數與每日傳送量一眼看完。</figcaption></figure>
+      <figure class="shot"><img src="img/ui_settings.jpg" alt="發文設定" loading="lazy"><figcaption><b>發文設定</b>選帳號、選粉專、勾選素材，按開始就交給它。</figcaption></figure>
+      <figure class="shot"><img src="img/ui_report.jpg" alt="數據報表" loading="lazy"><figcaption><b>數據報表</b>每一次任務的成功、失敗與明細都有紀錄。</figcaption></figure>
+      <figure class="shot wide"><img src="img/run_inbox.jpg" alt="實際運行：自動操作 Meta Business Suite 收件匣" loading="lazy"><figcaption><b>實際運行畫面</b>系統自動開啟 Meta Business Suite 收件匣，逐一點開對話並送出公告，全程不用人工操作。</figcaption></figure>
     </div>
   </div>
 </section>
