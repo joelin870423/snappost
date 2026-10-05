@@ -67,7 +67,7 @@
   <!-- ===== 會員中心 ===== -->
   <div id="cust" style="display:none">
     <div class="top">
-      <h1>會員中心 — <span id="uname"></span></h1>
+      <h1>會員中心 — <span id="uname"></span> <span class="chip" id="uno"></span></h1>
       <div class="row"><button class="sec" onclick="custChangePw()">修改密碼</button><button class="sec" onclick="custRefresh()">重新整理</button><button class="sec" onclick="logoutAll()">登出</button></div>
     </div>
     <div class="grid" style="margin-bottom:14px">
@@ -107,13 +107,13 @@
 
     <div id="paneU" class="card">
       <div class="row" style="margin-bottom:12px">
-        <input id="q" placeholder="搜尋帳號或推薦碼..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')loadUsers()">
+        <input id="q" placeholder="搜尋帳號、推薦碼或會員編號..." style="flex:1;min-width:160px" onkeydown="if(event.key==='Enter')loadUsers()">
         <button onclick="loadUsers()">搜尋</button>
         <button class="sec" onclick="document.getElementById('q').value='';loadUsers()">全部</button>
       </div>
       <p class="muted" style="margin-bottom:8px">點「發訊量」數字可看該會員的每日發送紀錄。</p>
       <div style="overflow-x:auto"><table>
-        <thead><tr><th>帳號</th><th>到期日</th><th>發訊量</th><th>狀態</th>
+        <thead><tr><th>ID</th><th>帳號</th><th>到期日</th><th>發訊量</th><th>狀態</th>
         <th class="hide-m">推薦碼</th><th class="hide-m">推薦人</th><th class="hide-m">版本</th><th class="hide-m">註冊日</th><th>操作</th></tr></thead>
         <tbody id="uRows"></tbody>
       </table></div>
@@ -257,6 +257,7 @@ async function custLogin(u, p) {
 function custShow(me) {
   show('cust');
   $('uname').textContent = me.username;
+  $('uno').textContent = me.member_no ? '會員編號 #' + me.member_no : '';
   const expired = me.expire_date && me.expire_date < new Date().toISOString().slice(0, 10);
   $('sStatus').innerHTML = me.status !== 'active' ? '<span class="chip bad">停權</span>' : (expired ? '<span class="chip bad">已到期</span>' : '<span class="chip">使用中</span>');
   $('sExpire').textContent = me.expire_date || '—';
@@ -355,6 +356,7 @@ async function loadUsers() {
   $('uRows').innerHTML = (USERS || []).map((u, i) => {
     const expired = u.expire_date && u.expire_date < today;
     return '<tr>' +
+      '<td class="muted" style="font-family:monospace">#' + esc(u.member_no ?? '') + '</td>' +
       '<td><b>' + esc(u.username) + '</b>' + (u.device_bound ? '' : ' <span class="chip">未綁機</span>') + '</td>' +
       '<td><span class="chip' + (expired ? ' bad' : '') + '">' + esc(u.expire_date || '—') + '</span></td>' +
       '<td><button class="link" onclick="openDaily(' + i + ')" title="看每日紀錄">' + u.messages_sent + ' / ' + u.message_limit + '</button></td>' +
@@ -373,7 +375,7 @@ async function loadUsers() {
         '<button class="sm sec" onclick="mdResetPw(' + i + ')">重設密碼</button>' +
         (ME.role === 'super' ? '<button class="sm sec" onclick="mdDevice(' + i + ')">改綁機</button>' : ''))) +
       '</td></tr>';
-  }).join('') || '<tr><td colspan="9" class="muted">沒有資料</td></tr>';
+  }).join('') || '<tr><td colspan="10" class="muted">沒有資料</td></tr>';
 }
 function quickDays(i, d) { const u = USERS[i];
   openModal('幫「' + u.username + '」延長 ' + d + ' 天', noteField, async () => { await rpc('adm_add_days', { p_user_id: u.id, p_days: d, p_note: $('fNote').value }); toast('已延長 ' + d + ' 天'); loadUsers(); }); }
