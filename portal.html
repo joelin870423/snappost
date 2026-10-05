@@ -68,7 +68,7 @@
   <div id="cust" style="display:none">
     <div class="top">
       <h1>會員中心 — <span id="uname"></span></h1>
-      <div class="row"><button class="sec" onclick="custRefresh()">重新整理</button><button class="sec" onclick="logoutAll()">登出</button></div>
+      <div class="row"><button class="sec" onclick="custChangePw()">修改密碼</button><button class="sec" onclick="custRefresh()">重新整理</button><button class="sec" onclick="logoutAll()">登出</button></div>
     </div>
     <div class="grid" style="margin-bottom:14px">
       <div class="stat"><div class="k">方案狀態</div><div class="v" id="sStatus">—</div></div>
@@ -95,7 +95,7 @@
   <div id="adm" style="display:none">
     <div class="top">
       <h1>管理後台</h1>
-      <div class="row"><span class="chip" id="meChip"></span><button class="sec sm" onclick="logoutAll()">登出</button></div>
+      <div class="row"><span class="chip" id="meChip"></span><button class="sec sm" onclick="admChangePw()">修改密碼</button><button class="sec sm" onclick="logoutAll()">登出</button></div>
     </div>
     <div class="tabs" style="margin-bottom:14px">
       <button id="tabU" class="on" onclick="showTab('U')">會員管理</button>
@@ -370,6 +370,7 @@ async function loadUsers() {
         '<button class="sm sec" onclick="mdQuota(' + i + ')">改量</button>' +
         '<button class="sm ' + (u.status === 'active' ? 'warn' : '') + '" onclick="mdStatus(' + i + ')">' + (u.status === 'active' ? '停權' : '復權') + '</button>' +
         '<button class="sm sec" onclick="mdReferrer(' + i + ')">改推薦人</button>' +
+        '<button class="sm sec" onclick="mdResetPw(' + i + ')">重設密碼</button>' +
         (ME.role === 'super' ? '<button class="sm sec" onclick="mdDevice(' + i + ')">改綁機</button>' : ''))) +
       '</td></tr>';
   }).join('') || '<tr><td colspan="9" class="muted">沒有資料</td></tr>';
@@ -390,6 +391,38 @@ function mdReferrer(i) { const u = USERS[i];
 function mdDevice(i) { const u = USERS[i];
   openModal('改「' + u.username + '」綁定裝置', '<div class="field"><label>新 device_id（留空 = 解除綁定）</label><input id="fDev" placeholder="客戶新機器的 device id"></div>' + noteField,
     async () => { await rpc('adm_set_device', { p_user_id: u.id, p_device_id: $('fDev').value.trim(), p_note: $('fNote').value }); toast('裝置已更新'); loadUsers(); }); }
+
+// ---- 密碼 ----
+const pwFields = (withOld) => (withOld ? '<div class="field"><label>目前密碼</label><input id="fOld" type="password" autocomplete="current-password"></div>' : '') +
+  '<div class="field"><label>新密碼（至少 6 碼）</label><input id="fNew" type="password" autocomplete="new-password"></div>' +
+  '<div class="field"><label>再輸入一次新密碼</label><input id="fNew2" type="password" autocomplete="new-password"></div>';
+function checkNewPw() {
+  const a = $('fNew').value, b = $('fNew2').value;
+  if (a.length < 6) throw new Error('新密碼至少 6 碼');
+  if (a !== b) throw new Error('兩次輸入的新密碼不一致');
+  return a;
+}
+function custChangePw() {
+  openModal('修改密碼', pwFields(true), async () => {
+    const np = checkNewPw();
+    try { await crpc('sp_portal_change_password', { p_username: CRED.p_username, p_old: $('fOld').value, p_new: np }); }
+    catch (e) { throw new Error(friendly(e.message) === e.message && e.message.indexOf('password_too_short') >= 0 ? '新密碼至少 6 碼' : friendly(e.message)); }
+    CRED.p_password = np; toast('密碼已更新');
+  });
+}
+function admChangePw() {
+  openModal('修改我的管理員密碼', pwFields(false), async () => {
+    const np = checkNewPw();
+    const r = await fetch(SUPABASE_URL + '/auth/v1/user', { method: 'PUT',
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + AUTH.access_token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: np }) });
+    if (!r.ok) { let m = ''; try { const j = await r.json(); m = j.msg || j.error_description || j.message || ''; } catch (e) {} throw new Error(m || '更新失敗'); }
+    toast('管理員密碼已更新');
+  });
+}
+function mdResetPw(i) { const u = USERS[i];
+  openModal('重設「' + u.username + '」的密碼', '<p class="muted" style="margin-bottom:10px">設一組暫時密碼告知客戶，客戶登入會員中心後可自行再改。此操作會記進稽核。</p>' + pwFields(false) + noteField,
+    async () => { const np = checkNewPw(); await rpc('adm_reset_password', { p_user_id: u.id, p_new: np, p_note: $('fNote').value }); toast('密碼已重設'); }); }
 
 // ---- 每日紀錄 modal ----
 async function openDaily(i, days) {
@@ -422,7 +455,7 @@ function toggleDay(k) { const el = $('day' + k); el.style.display = el.style.dis
 
 // ---- audit ----
 const ACT = { set_expire: '改到期日', add_days: '續費', set_quota: '改發訊量', set_status: '改狀態', set_device: '改綁機', set_referrer: '改推薦人',
-              set_admin: '管理員異動', add_version: '登記版本', del_version: '刪除版本', add_download: '更新下載頁', set_setting: '改試用設定' };
+              set_admin: '管理員異動', add_version: '登記版本', del_version: '刪除版本', add_download: '更新下載頁', set_setting: '改試用設定', reset_password: '重設會員密碼' };
 async function loadAudit() {
   let rows; try { rows = await rpc('adm_list_audit', { p_limit: 300, p_admin_email: ($('aFilter').value || null) }); } catch (e) { toast(e.message, true); return; }
   if (ME.role === 'super') { const sel = $('aFilter'); sel.style.display = '';
